@@ -156,10 +156,16 @@ class ScheduleService:
                 time.sleep(0.1)
         return sorted(items.values(), key=sort_key)
 
-    def refresh(self) -> None:
-        if not self._refreshing.acquire(blocking=False):
+    def _has(self, kind: ScheduleKind) -> bool:
+        with self._lock:
+            return kind in self._lists
+
+    def refresh(self, wait: bool = False, kind: ScheduleKind | None = None) -> None:
+        if not self._refreshing.acquire(blocking=wait):
             return
         try:
+            if kind is not None and self._has(kind):
+                return
             headers = {"User-Agent": self.settings.user_agent, "Accept": "application/json"}
             with httpx.Client(headers=headers, timeout=self.settings.request_timeout) as client:
                 fresh: dict[str, ScheduleList] = {}
@@ -185,7 +191,7 @@ class ScheduleService:
         with self._lock:
             current = self._lists.get(kind)
         if current is None:
-            self.refresh()
+            self.refresh(wait=True, kind=kind)
             with self._lock:
                 current = self._lists.get(kind)
         elif stale:

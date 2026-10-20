@@ -43,3 +43,31 @@ def test_streams_sort_numerically():
     base = {"degree_type": "bachelor", "year": 1, "file_path": "https://x/a.pdf", "faculty": {"slug": "f", "title": "F"}, "major": {"slug": "m", "title": "M"}}
     items = [normalize({**base, "id": index, "stream": stream}, "lectures") for index, stream in enumerate([10, 2, 1])]
     assert [item.stream for item in sorted(items, key=sort_key)] == ["1", "2", "10"]
+
+
+def test_get_waits_for_running_refresh(tmp_path):
+    import threading
+    import time as clock
+    from dataclasses import replace
+
+    from app.config import settings
+    from app.models import ScheduleList
+    from app.schedules import ScheduleService
+
+    service = ScheduleService(replace(settings, data_dir=str(tmp_path)))
+    calls = []
+
+    def slow_fetch(client, kind):
+        calls.append(kind)
+        clock.sleep(0.3)
+        return []
+
+    service._fetch_kind = slow_fetch
+    worker = threading.Thread(target=service.refresh)
+    worker.start()
+    clock.sleep(0.05)
+    result = service.get("lectures")
+    worker.join()
+    assert isinstance(result, ScheduleList)
+    assert result.updated_at is not None
+    assert calls == ["lectures", "exams"]
