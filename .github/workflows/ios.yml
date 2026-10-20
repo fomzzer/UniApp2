@@ -42,7 +42,7 @@ jobs:
             -scheme UniApp \
             -destination "id=$DEVICE_ID" \
             -derivedDataPath build/test \
-            CODE_SIGNING_ALLOWED=NO | xcbeautify
+            CODE_SIGNING_ALLOWED=NO | xcbeautify --renderer github-actions
 
       - name: Build unsigned IPA
         run: |
@@ -56,7 +56,7 @@ jobs:
             -derivedDataPath build/release \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" | xcbeautify
+            CODE_SIGN_IDENTITY="" | xcbeautify --renderer github-actions
           mkdir -p Payload
           cp -R build/release/Build/Products/Release-iphoneos/UniApp.app Payload/
           zip -qry UniApp.ipa Payload
