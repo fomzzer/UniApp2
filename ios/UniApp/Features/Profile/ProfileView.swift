@@ -23,7 +23,7 @@ struct ProfileView: View {
                         if !student.details.isEmpty {
                             detailsCard(student.details)
                         }
-                        settingsCard(language: $settings.languageTitle, biometricLock: $settings.biometricLock)
+                        settingsCard(language: $settings.language, biometricLock: $settings.biometricLock)
                         NavigationLink {
                             AboutView()
                         } label: {
