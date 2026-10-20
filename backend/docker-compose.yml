@@ -1,0 +1,32 @@
+services:
+  api:
+    build: .
+    image: uniapp-backend:2
+    container_name: uniapp-api
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - uniapp-data:/data
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    container_name: uniapp-caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  uniapp-data:
+  caddy-data:
+  caddy-config:

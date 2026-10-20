@@ -1,0 +1,138 @@
+{
+ "success": true,
+ "data": {
+  "data": [
+   {
+    "id": 553,
+    "academic_year_start": 2026,
+    "academic_year": "2026/2027",
+    "type": "lectures",
+    "semester": "winter",
+    "degree_type": "bachelor",
+    "year": 1,
+    "stream": 1,
+    "file_path": "https://d3v.cloud.tu-sofia.bg/storage/download/schedules/UpfYj3BHUh5uWwn8bFO0VSN7Pzjw0mpZXzBzq0yR.pdf",
+    "external_url": null,
+    "faculty": {
+     "slug": "faculty-of-computer-systems-and-technologies",
+     "title": "Факултет „Компютърни системи и технологии“"
+    },
+    "major": {
+     "slug": "kompiutierni-nauki-i-inzenerstvo",
+     "title": "Компютърни науки и инженерство на английски език"
+    }
+   },
+   {
+    "id": 473,
+    "academic_year_start": 2026,
+    "academic_year": "2026/2027",
+    "type": "lectures",
+    "semester": "winter",
+    "degree_type": "bachelor",
+    "year": 1,
+    "stream": 8,
+    "file_path": "https://d3v.cloud.tu-sofia.bg/storage/download/schedules/UMtDz6VD4Aj8rI72osdExNGiBEB3gvycEgRpxVdp.pdf",
+    "external_url": null,
+    "faculty": {
+     "slug": "faculty-of-computer-systems-and-technologies",
+     "title": "Факултет „Компютърни системи и технологии“"
+    },
+    "major": {
+     "slug": "kompyutarno-i-softuerno-inzhenerstvo-3",
+     "title": "Компютърно и софтуерно инженерство"
+    }
+   },
+   {
+    "id": 472,
+    "academic_year_start": 2026,
+    "academic_year": "2026/2027",
+    "type": "lectures",
+    "semester": "winter",
+    "degree_type": "bachelor",
+    "year": 1,
+    "stream": 9,
+    "file_path": "https://d3v.cloud.tu-sofia.bg/storage/download/schedules/TwtgW1ZR9GbSDT56Scgg3czgoLeH8KlIBy2G8E5W.pdf",
+    "external_url": null,
+    "faculty": {
+     "slug": "faculty-of-computer-systems-and-technologies",
+     "title": "Факултет „Компютърни системи и технологии“"
+    },
+    "major": {
+     "slug": "kompyutarno-i-softuerno-inzhenerstvo-3",
+     "title": "Компютърно и софтуерно инженерство"
+    }
+   },
+   {
+    "id": 474,
+    "academic_year_start": 2026,
+    "academic_year": "2026/2027",
+    "type": "lectures",
+    "semester": "winter",
+    "degree_type": "bachelor",
+    "year": 1,
+    "stream": 10,
+    "file_path": "https://d3v.cloud.tu-sofia.bg/storage/download/schedules/dUeXJm7kimEUx9oHNnToBs8uLv1wHQCpXneHJ38a.pdf",
+    "external_url": null,
+    "faculty": {
+     "slug": "faculty-of-computer-systems-and-technologies",
+     "title": "Факултет „Компютърни системи и технологии“"
+    },
+    "major": {
+     "slug": "inteligentni-texnologii-v-industriiata",
+     "title": "Интелигентни технологии в индустрията"
+    }
+   },
+   {
+    "id": 489,
+    "academic_year_start": 2026,
+    "academic_year": "2026/2027",
+    "type": "lectures",
+    "semester": "winter",
+    "degree_type": "bachelor",
+    "year": 1,
+    "stream": 10,
+    "file_path": "https://d3v.cloud.tu-sofia.bg/storage/download/schedules/B2dQiR8KGiaSOr74u34N0gKQv2zEsu7UJeQU2OKG.pdf",
+    "external_url": null,
+    "faculty": {
+     "slug": "faculty-of-computer-systems-and-technologies",
+     "title": "Факултет „Компютърни системи и технологии“"
+    },
+    "major": {
+     "slug": "kibersigurnost",
+     "title": "Киберсигурност"
+    }
+   },
+   {
+    "id": 554,
+    "academic_year_start": 2026,
+    "academic_year": "2026/2027",
+    "type": "lectures",
+    "semester": "winter",
+    "degree_type": "bachelor",
+    "year": 2,
+    "stream": 1,
+    "file_path": "https://d3v.cloud.tu-sofia.bg/storage/download/schedules/Vt7cICDVId45y8a0qFYp5RIK44elQ3d2mvXf1yDl.pdf",
+    "external_url": null,
+    "faculty": {
+     "slug": "faculty-of-computer-systems-and-technologies",
+     "title": "Факултет „Компютърни системи и технологии“"
+    },
+    "major": {
+     "slug": "kompiutierni-nauki-i-inzenerstvo",
+     "title": "Компютърни науки и инженерство на английски език"
+    }
+   }
+  ],
+  "links": {
+   "next": null,
+   "prev": null
+  },
+  "meta": {
+   "path": "/schedules",
+   "per_page": 50,
+   "next_cursor": null,
+   "prev_cursor": null
+  }
+ },
+ "message": "Schedules retrieved successfully"
+}

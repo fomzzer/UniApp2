@@ -1,0 +1,16 @@
+.DS_Store
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+ios/build/
+ios/Payload/
+*.ipa
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+backend/.env
+.idea/
+.vscode/
