@@ -20,7 +20,7 @@ jobs:
       run:
         working-directory: ios
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Select Xcode 26
         run: |
@@ -61,7 +61,7 @@ jobs:
           cp -R build/release/Build/Products/Release-iphoneos/UniApp.app Payload/
           zip -qry UniApp.ipa Payload
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: UniApp-${{ github.run_number }}-unsigned-ipa
           path: ios/UniApp.ipa

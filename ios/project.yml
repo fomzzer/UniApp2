@@ -36,6 +36,7 @@ targets:
         UIUserInterfaceStyle: Dark
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIRequiredDeviceCapabilities: [arm64]
+        UIRequiresFullScreen: true
         NSFaceIDUsageDescription: UniApp използва Face ID, за да защити оценките и личните ти данни.
         UniAppAPIHost: $(UNIAPP_API_HOST)
     settings:
