@@ -162,7 +162,7 @@ struct Strings: Sendable {
     var copied: String { t("Копирано", "Скопировано") }
     var allDetails: String { t("Всички данни от „Е-Студент“", "Все данные из «Е-Студент»") }
     var settings: String { t("Настройки", "Настройки") }
-    var language: String { t("Език", "Язык") }
+    var languageTitle: String { t("Език", "Язык") }
     var faceIDLock: String { t("Заключване с Face ID", "Блокировка Face ID") }
     var faceIDHint: String { t("Приложението ще иска Face ID при всяко отваряне.", "Приложение будет запрашивать Face ID при каждом открытии.") }
     var about: String { t("За приложението", "О приложении") }

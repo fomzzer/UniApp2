@@ -23,7 +23,7 @@ struct ProfileView: View {
                         if !student.details.isEmpty {
                             detailsCard(student.details)
                         }
-                        settingsCard(language: $settings.language, biometricLock: $settings.biometricLock)
+                        settingsCard(language: $settings.languageTitle, biometricLock: $settings.biometricLock)
                         NavigationLink {
                             AboutView()
                         } label: {
@@ -168,11 +168,11 @@ struct ProfileView: View {
             GlassCard(padding: 16) {
                 VStack(spacing: 0) {
                     HStack {
-                        Label(s.language, systemImage: "globe")
+                        Label(s.languageTitle, systemImage: "globe")
                             .font(.subheadline)
                             .foregroundStyle(.white)
                         Spacer()
-                        Picker(s.language, selection: language) {
+                        Picker(s.languageTitle, selection: language) {
                             ForEach(AppLanguage.allCases) { option in
                                 Text("\(option.flag) \(option.nativeName)").tag(option)
                             }
