@@ -170,6 +170,8 @@ struct ScheduleView: View {
                 .disabled(streams.isEmpty)
             }
         }
+        // Moves the card as one piece, so its rows don't animate their own frames.
+        .geometryGroup()
     }
 
     private func filterRow<Content: View>(_ title: String, value: String?, @ViewBuilder picker: () -> Content) -> some View {
@@ -367,6 +369,8 @@ private struct FilterRow<Options: View>: View {
                 .frame(width: 12)
         }
         .frame(minHeight: 46)
+        // Values swap in place instead of sliding while the card itself animates.
+        .transaction { $0.animation = nil }
         .overlay {
             Menu {
                 options
