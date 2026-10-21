@@ -35,14 +35,26 @@ struct MainTabView: View {
     }
 }
 
+private struct TabRevealState {
+    var opacity = 1.0
+    var scale = 1.0
+}
+
 private extension View {
     func tabReveal(_ selection: AppTab) -> some View {
-        keyframeAnimator(initialValue: 1.0, trigger: selection) { content, value in
-            content.opacity(value)
+        keyframeAnimator(initialValue: TabRevealState(), trigger: selection) { content, value in
+            content
+                .opacity(value.opacity)
+                .scaleEffect(value.scale)
         } keyframes: { _ in
-            KeyframeTrack {
-                MoveKeyframe(0.35)
-                CubicKeyframe(1.0, duration: 0.3)
+            KeyframeTrack(\.opacity) {
+                MoveKeyframe(0)
+                CubicKeyframe(0.6, duration: 0.14)
+                CubicKeyframe(1, duration: 0.34)
+            }
+            KeyframeTrack(\.scale) {
+                MoveKeyframe(0.985)
+                SpringKeyframe(1, duration: 0.5, spring: .smooth)
             }
         }
     }
