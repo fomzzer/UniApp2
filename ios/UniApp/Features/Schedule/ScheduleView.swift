@@ -349,26 +349,31 @@ private struct FilterRow<Options: View>: View {
     @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
-        Menu {
-            options
-        } label: {
-            HStack(spacing: 12) {
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.textSecondary)
-                    .fixedSize()
-                Spacer(minLength: 8)
-                Text(value ?? placeholder)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(value == nil ? Theme.textSecondary : .white)
-                    .lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Theme.textTertiary)
-                    .frame(width: 12)
+        // The label is drawn outside the Menu: a Menu label is hosted in UIKit and
+        // lags behind when the card moves, so the text would jitter on its own.
+        HStack(spacing: 12) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(Theme.textSecondary)
+                .fixedSize()
+            Spacer(minLength: 8)
+            Text(value ?? placeholder)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(value == nil ? Theme.textSecondary : .white)
+                .lineLimit(1)
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.textTertiary)
+                .frame(width: 12)
+        }
+        .frame(minHeight: 46)
+        .overlay {
+            Menu {
+                options
+            } label: {
+                Color.clear
+                    .contentShape(.rect)
             }
-            .frame(minHeight: 46)
-            .contentShape(.rect)
         }
         .opacity(isEnabled ? 1 : 0.4)
         .animation(.smooth(duration: 0.3), value: isEnabled)
