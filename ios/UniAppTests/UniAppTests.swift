@@ -43,7 +43,7 @@ final class ScheduleMatcherTests: XCTestCase {
     private func student(faculty: String, specialty: String, course: Int?, stream: String?) -> Student {
         Student(
             name: "Иван Иванов", facultyNo: "1", faculty: faculty, specialty: specialty, degree: nil,
-            educationForm: nil, semester: nil, course: course, group: nil, stream: stream, email: nil, details: [:]
+            educationForm: nil, semester: nil, course: course, group: nil, stream: stream, email: nil, ean: nil, details: [:]
         )
     }
 

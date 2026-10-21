@@ -26,6 +26,7 @@ struct Student: Codable, Hashable, Sendable {
     var group: String?
     var stream: String?
     var email: String?
+    var ean: String?
     var details: [String: String]
 
     var firstName: String {

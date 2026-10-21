@@ -93,6 +93,12 @@ struct ProfileView: View {
             SectionHeader(title: s.studies)
             GlassCard(padding: 16) {
                 VStack(spacing: 0) {
+                    InfoRow(title: s.facultyNoShort, value: student.facultyNo)
+                    if student.ean != nil {
+                        Divider().overlay(Theme.separator)
+                        InfoRow(title: s.ean, value: student.ean)
+                    }
+                    Divider().overlay(Theme.separator)
                     InfoRow(title: s.faculty, value: student.faculty)
                     Divider().overlay(Theme.separator)
                     InfoRow(title: s.specialty, value: student.specialty)

@@ -6,7 +6,7 @@ HOME_PAGE = """
 <html><body>
 <div>Иван Петров Иванов <input type=submit id=izh value="Изход"></div>
 <table id=info>
-<tr><td>Фак. номер:</td><td>121221089</td><td>Факултет:</td><td>Факултет Компютърни системи и технологии</td></tr>
+<tr><td><b>Фак. номер:</b><br><b>ЕАН:</b></td><td>121221089<br><a href="ean.php">AB12345</a></td><td>Факултет:</td><td>Факултет Компютърни системи и технологии</td></tr>
 <tr><td>Специалност:</td><td>Компютърно и софтуерно инженерство</td><td>Записан семестър:</td><td>3</td></tr>
 <tr><td>Група:</td><td>42</td><td>Поток:</td><td>8</td></tr>
 <tr><td>Имейл в ТУ - София:</td><td>ivan@tu-sofia.bg<br><font size=1>Първоначалната парола за достъп е вашият ЕГН</font></td><td>Вид обучение:</td><td>редовно</td></tr>
@@ -38,6 +38,8 @@ def test_student_profile_is_normalized():
     student = parsers.build_student(parsers.parse_student_name(page), "000", parsers.parse_info(page))
     assert student.name == "Иван Петров Иванов"
     assert student.faculty_no == "121221089"
+    assert student.ean == "AB12345"
+    assert student.details["ЕАН"] == "AB12345"
     assert student.faculty == "Факултет Компютърни системи и технологии"
     assert student.specialty == "Компютърно и софтуерно инженерство"
     assert student.semester == 3

@@ -49,13 +49,21 @@ def parse_info(soup: BeautifulSoup) -> dict[str, str]:
     for row in table.find_all("tr"):
         cells = row.find_all("td")
         for index in range(0, len(cells) - 1, 2):
-            key_parts = list(cells[index].stripped_strings)
-            value_parts = list(cells[index + 1].stripped_strings)
-            key = clean(key_parts[0]).replace('"', "").rstrip(":").strip() if key_parts else ""
-            value = clean(value_parts[0]).replace('"', "") if value_parts else ""
-            if key:
-                info[key] = value
+            keys = [_info_key(part) for part in cells[index].stripped_strings]
+            keys = [key for key in keys if key]
+            values = [clean(part).replace('"', "") for part in cells[index + 1].stripped_strings]
+            values = [value for value in values if value]
+            if not keys:
+                continue
+            if len(keys) > 1 and len(keys) == len(values):
+                info.update(zip(keys, values))
+            else:
+                info[keys[0]] = values[0] if values else ""
     return info
+
+
+def _info_key(text: str) -> str:
+    return clean(text).replace('"', "").rstrip(":").strip()
 
 
 def _pick(info: dict[str, str], *needles: str) -> str | None:
@@ -89,6 +97,7 @@ def build_student(name: str, faculty_no: str, info: dict[str, str]) -> Student:
     return Student(
         name=name or _pick(info, "име") or faculty_no,
         faculty_no=_pick(info, "фак. номер", "факултетен номер", "фак. №") or faculty_no,
+        ean=info.get("ЕАН") or _pick(info, "еан"),
         faculty=_pick(info, "факултет"),
         specialty=_pick(info, "специалност"),
         degree=_pick(info, "степен", "окс"),

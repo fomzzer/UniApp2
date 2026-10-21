@@ -36,6 +36,7 @@ class Student(APIModel):
     group: str | None = None
     stream: str | None = None
     email: str | None = None
+    ean: str | None = None
     details: dict[str, str] = Field(default_factory=dict)
 
 

@@ -152,6 +152,7 @@ struct Strings: Sendable {
 
     var studies: String { t("Обучение", "Учёба") }
     var facultyNoShort: String { t("Фак. №", "Фак. №") }
+    var ean: String { "ЕАН" }
     var specialty: String { t("Специалност", "Специальность") }
     var educationDegree: String { t("ОКС", "Степень") }
     var educationForm: String { t("Форма на обучение", "Форма обучения") }
