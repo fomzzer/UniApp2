@@ -211,29 +211,43 @@ struct ProfileView: View {
             SectionHeader(title: s.settings)
             GlassCard(padding: 16) {
                 VStack(spacing: 0) {
-                    HStack {
-                        Label(s.languageTitle, systemImage: "globe")
-                            .font(.subheadline)
-                            .foregroundStyle(.white)
-                        Spacer()
+                    Menu {
                         Picker(s.languageTitle, selection: language) {
                             ForEach(AppLanguage.allCases) { option in
                                 Text("\(option.flag) \(option.nativeName)").tag(option)
                             }
                         }
-                        .pickerStyle(.menu)
-                        .tint(.white)
+                        .pickerStyle(.inline)
+                    } label: {
+                        HStack(spacing: 14) {
+                            IconBadge(systemImage: "globe", size: 36)
+                            Text(s.languageTitle)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                            Spacer(minLength: 8)
+                            Text("\(language.wrappedValue.flag) \(language.wrappedValue.nativeName)")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.textSecondary)
+                                .lineLimit(1)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                        .padding(.vertical, 10)
+                        .contentShape(.rect)
                     }
-                    .frame(minHeight: 46)
                     Divider().overlay(Theme.separator)
                     Toggle(isOn: biometricLock) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Label(s.faceIDLock, systemImage: "faceid")
-                                .font(.subheadline)
-                                .foregroundStyle(.white)
-                            Text(s.faceIDHint)
-                                .font(.caption)
-                                .foregroundStyle(Theme.textTertiary)
+                        HStack(spacing: 14) {
+                            IconBadge(systemImage: "faceid", size: 36)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(s.faceIDLock)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                Text(s.faceIDHint)
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
                         }
                     }
                     .tint(Theme.accent)
