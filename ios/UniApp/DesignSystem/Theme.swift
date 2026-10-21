@@ -73,7 +73,10 @@ struct GlassCard<Content: View>: View {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard(cornerRadius: cornerRadius, tint: tint)
+            .background {
+                Color.clear
+                    .glassCard(cornerRadius: cornerRadius, tint: tint)
+            }
     }
 }
 

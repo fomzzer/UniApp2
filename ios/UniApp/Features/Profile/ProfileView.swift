@@ -227,7 +227,7 @@ struct ProfileView: View {
                             Spacer(minLength: 8)
                             Text("\(language.wrappedValue.flag) \(language.wrappedValue.nativeName)")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Theme.textSecondary)
+                                .foregroundStyle(.white)
                                 .lineLimit(1)
                             Image(systemName: "chevron.up.chevron.down")
                                 .font(.caption2.weight(.semibold))

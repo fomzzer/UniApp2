@@ -248,8 +248,7 @@ struct LoginView: View {
                 }
             }
         } label: {
-            Text(settings.language.flag)
-                .font(.title3)
+            EmojiGlyph(emoji: settings.language.flag, size: 22)
                 .frame(width: 44, height: 44)
                 .glassEffect(.regular, in: .circle)
         }
