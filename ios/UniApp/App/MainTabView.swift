@@ -15,19 +15,19 @@ struct MainTabView: View {
         TabView(selection: $selection) {
             Tab(s.tabHome, systemImage: "house.fill", value: AppTab.home) {
                 HomeView(selection: $selection)
-                    .tabReveal(selection)
+                    .tabReveal(selection, glow: 1)
             }
             Tab(s.tabGrades, systemImage: "graduationcap.fill", value: AppTab.grades) {
                 GradesView()
-                    .tabReveal(selection)
+                    .tabReveal(selection, glow: 0.75)
             }
             Tab(s.tabSchedule, systemImage: "calendar", value: AppTab.schedule) {
                 ScheduleView()
-                    .tabReveal(selection)
+                    .tabReveal(selection, glow: 0.75)
             }
             Tab(s.tabProfile, systemImage: "person.crop.circle.fill", value: AppTab.profile) {
                 ProfileView()
-                    .tabReveal(selection)
+                    .tabReveal(selection, glow: 0.75)
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
@@ -36,9 +36,13 @@ struct MainTabView: View {
 }
 
 private extension View {
-    func tabReveal(_ selection: AppTab) -> some View {
+    // Only the content fades in: a matching backdrop stays opaque underneath,
+    // so nothing darker or brighter shows through mid-reveal.
+    func tabReveal(_ selection: AppTab, glow: Double) -> some View {
         keyframeAnimator(initialValue: 1.0, trigger: selection) { content, value in
-            content.opacity(value)
+            content
+                .opacity(value)
+                .background { AppBackground(glow: glow) }
         } keyframes: { _ in
             KeyframeTrack {
                 MoveKeyframe(0.5)
