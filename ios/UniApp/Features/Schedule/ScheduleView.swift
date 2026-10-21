@@ -37,15 +37,24 @@ struct ScheduleView: View {
 
                     if let mine = store.myItem(kind, student: session.snapshot?.student) {
                         myCard(mine)
+                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     }
 
                     filterCard
                     content
+                        .transition(.opacity)
                 }
                 .padding(.horizontal, Theme.pagePadding)
                 .padding(.bottom, 32)
-                .animation(.smooth, value: kind)
-                .animation(.smooth, value: majorSlug)
+                .animation(.smooth(duration: 0.35), value: kind)
+                .animation(.smooth(duration: 0.35), value: degree)
+                .animation(.smooth(duration: 0.35), value: facultySlug)
+                .animation(.smooth(duration: 0.35), value: majorSlug)
+                .animation(.smooth(duration: 0.35), value: year)
+                .animation(.smooth(duration: 0.35), value: stream)
+                .animation(.smooth(duration: 0.35), value: store.pinned)
+                .animation(.smooth(duration: 0.4), value: items)
+                .animation(.smooth(duration: 0.35), value: store.isLoading(kind))
             }
             .background { AppBackground(glow: 0.75) }
             .navigationTitle(s.tabSchedule)
@@ -261,6 +270,7 @@ struct ScheduleView: View {
                 SectionHeader(title: selectedMajorTitle ?? s.results)
                 ForEach(results) { item in
                     resultRow(item)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 }
             }
         }
@@ -292,6 +302,7 @@ struct ScheduleView: View {
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(.rect(cornerRadius: Theme.cardRadius))
             .glassCard(tint: Theme.accent.opacity(0.35))
         }
         .buttonStyle(.pressable)
@@ -324,17 +335,18 @@ struct ScheduleView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(.rect(cornerRadius: Theme.rowRadius))
             .glassCard(cornerRadius: Theme.rowRadius)
         }
         .buttonStyle(.pressable)
         .contextMenu {
             if isPinned {
                 Button(s.unpin, systemImage: "star.slash") {
-                    store.pinned = nil
+                    withAnimation(.smooth(duration: 0.35)) { store.pinned = nil }
                 }
             } else {
                 Button(s.pinAsMine, systemImage: "star") {
-                    store.pinned = ScheduleSelection(item: item)
+                    withAnimation(.smooth(duration: 0.35)) { store.pinned = ScheduleSelection(item: item) }
                 }
             }
         }

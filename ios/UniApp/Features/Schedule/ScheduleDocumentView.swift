@@ -33,6 +33,7 @@ struct ScheduleDocumentView: View {
                 } else if let fileURL {
                     PDFKitView(url: fileURL)
                         .ignoresSafeArea(edges: .bottom)
+                        .transition(.opacity)
                 } else if let failure {
                     ContentUnavailableView {
                         Label(s.documentFailed, systemImage: "exclamationmark.triangle")
@@ -50,8 +51,11 @@ struct ScheduleDocumentView: View {
                 } else {
                     ProgressView(s.loading)
                         .tint(.white)
+                        .transition(.opacity)
                 }
             }
+            .animation(.smooth(duration: 0.35), value: fileURL)
+            .animation(.smooth(duration: 0.35), value: failure != nil)
             .navigationTitle(item.major)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -60,7 +64,9 @@ struct ScheduleDocumentView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button(isPinned ? s.unpin : s.pinAsMine, systemImage: isPinned ? "star.fill" : "star") {
-                        store.pinned = isPinned ? nil : ScheduleSelection(item: item)
+                        withAnimation(.smooth(duration: 0.3)) {
+                            store.pinned = isPinned ? nil : ScheduleSelection(item: item)
+                        }
                     }
                     if let fileURL {
                         ShareLink(item: fileURL)

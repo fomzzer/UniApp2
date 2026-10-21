@@ -9,6 +9,7 @@ struct ProfileView: View {
     @State private var confirmSignOut = false
     @State private var copiedTrigger = 0
     @State private var showCopied = false
+    @State private var detailsExpanded = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -50,6 +51,7 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, Theme.pagePadding)
                     .padding(.bottom, 32)
+                    .animation(.smooth(duration: 0.35), value: snapshot)
                 }
             }
             .background { AppBackground(glow: 0.75) }
@@ -67,7 +69,7 @@ struct ProfileView: View {
                         .padding(.top, 8)
                 }
             }
-            .animation(.smooth, value: showCopied)
+            .animation(.smooth(duration: 0.35), value: showCopied)
         }
     }
 
@@ -151,7 +153,10 @@ struct ProfileView: View {
 
     private func detailsCard(_ details: [String: String]) -> some View {
         GlassCard(padding: 16) {
-            DisclosureGroup {
+            DisclosureGroup(isExpanded: Binding(
+                get: { detailsExpanded },
+                set: { value in withAnimation(.smooth(duration: 0.35)) { detailsExpanded = value } }
+            )) {
                 VStack(spacing: 0) {
                     let keys = details.keys.sorted()
                     ForEach(Array(keys.enumerated()), id: \.element) { index, key in
@@ -162,6 +167,7 @@ struct ProfileView: View {
                     }
                 }
                 .padding(.top, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             } label: {
                 Text(s.allDetails)
                     .font(.subheadline.weight(.semibold))
@@ -220,6 +226,7 @@ struct ProfileView: View {
                 .foregroundStyle(Theme.textTertiary)
         }
         .padding(14)
+        .contentShape(.rect(cornerRadius: Theme.rowRadius))
         .glassCard(cornerRadius: Theme.rowRadius)
     }
 

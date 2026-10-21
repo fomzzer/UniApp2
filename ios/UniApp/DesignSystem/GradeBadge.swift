@@ -10,7 +10,9 @@ struct GradeBadge: View {
             .font(.system(size: size * 0.44, weight: .bold, design: .rounded))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
+            .contentTransition(.numericText())
             .glassEffect(.regular.tint(color.opacity(0.75)), in: .rect(cornerRadius: size * 0.34))
+            .animation(.smooth(duration: 0.35), value: text)
     }
 
     private var color: Color {
@@ -27,9 +29,11 @@ struct GradeBadge: View {
 struct GPAScale: View {
     let value: Double?
 
+    @State private var progress = 0.0
+
     var body: some View {
         GeometryReader { proxy in
-            let fraction = max(0, min(1, ((value ?? 2) - 2) / 4))
+            let fraction = max(0, min(1, ((value ?? 2) - 2) / 4)) * progress
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(.white.opacity(0.12))
@@ -40,5 +44,9 @@ struct GPAScale: View {
             }
         }
         .frame(height: 8)
+        .animation(.smooth(duration: 0.5), value: value)
+        .onAppear {
+            withAnimation(.smooth(duration: 0.9).delay(0.1)) { progress = 1 }
+        }
     }
 }

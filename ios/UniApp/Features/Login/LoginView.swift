@@ -68,6 +68,9 @@ struct LoginView: View {
         }
         .animation(.smooth(duration: 0.35), value: method)
         .animation(.smooth(duration: 0.35), value: errorText)
+        .animation(.smooth(duration: 0.3), value: isSubmitting)
+        .animation(.smooth(duration: 0.3), value: isDetecting)
+        .animation(.smooth(duration: 0.25), value: revealSecret)
         .sensoryFeedback(.success, trigger: successTrigger)
         .onAppear {
             if facultyNo.isEmpty {
@@ -119,6 +122,7 @@ struct LoginView: View {
                         }
                     if isDetecting {
                         ProgressView().controlSize(.small).tint(.white)
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
                     }
                 }
 
@@ -143,6 +147,7 @@ struct LoginView: View {
                         } label: {
                             Image(systemName: revealSecret ? "eye.slash" : "eye")
                                 .foregroundStyle(Theme.textSecondary)
+                                .contentTransition(.symbolEffect(.replace))
                         }
                         .buttonStyle(.plain)
                     }
@@ -201,6 +206,7 @@ struct LoginView: View {
             HStack(spacing: 12) {
                 if isSubmitting {
                     ProgressView().tint(.white)
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
                 Text(isSubmitting ? s.loginStep(progressStep) : s.signIn)
                     .font(.headline)
@@ -232,7 +238,7 @@ struct LoginView: View {
         Menu {
             ForEach(AppLanguage.allCases) { language in
                 Button {
-                    settings.language = language
+                    withAnimation(.smooth(duration: 0.35)) { settings.language = language }
                 } label: {
                     if language == settings.language {
                         Label("\(language.flag) \(language.nativeName)", systemImage: "checkmark")

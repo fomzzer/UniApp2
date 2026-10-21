@@ -22,6 +22,7 @@ struct HomeView: View {
                         header(snapshot.student)
                         if let error = session.refreshError {
                             refreshBanner(error)
+                                .transition(.move(edge: .top).combined(with: .opacity))
                         }
                         GPAHeroCard(grades: snapshot.grades)
                         quickActions(snapshot.student)
@@ -40,6 +41,8 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, Theme.pagePadding)
                     .padding(.bottom, 32)
+                    .animation(.smooth(duration: 0.4), value: snapshot)
+                    .animation(.smooth(duration: 0.35), value: session.refreshError != nil)
                 }
             }
             .background { AppBackground() }
@@ -79,15 +82,19 @@ struct HomeView: View {
             Button {
                 Task { await refresh() }
             } label: {
-                Group {
+                ZStack {
                     if session.isRefreshing {
-                        ProgressView().tint(.white)
+                        ProgressView()
+                            .tint(.white)
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
                     } else {
                         Image(systemName: "arrow.clockwise")
                             .font(.body.weight(.semibold))
                             .foregroundStyle(.white)
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
                     }
                 }
+                .animation(.smooth(duration: 0.3), value: session.isRefreshing)
                 .frame(width: 44, height: 44)
                 .glassEffect(.regular, in: .circle)
             }
@@ -112,7 +119,7 @@ struct HomeView: View {
             }
             Spacer()
             Button {
-                session.refreshError = nil
+                withAnimation(.smooth(duration: 0.35)) { session.refreshError = nil }
             } label: {
                 Image(systemName: "xmark")
                     .font(.caption.weight(.bold))
@@ -178,6 +185,8 @@ struct HomeView: View {
                             .foregroundStyle(Theme.textSecondary)
                     }
                 }
+                .animation(.smooth(duration: 0.35), value: item)
+                .animation(.smooth(duration: 0.35), value: schedules.isLoading(.lectures))
                 Spacer(minLength: 8)
                 Button(item == nil ? s.choose : s.open) {
                     if let item {
@@ -242,6 +251,7 @@ struct QuickActionButton: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
+            .contentShape(.rect)
         }
         .buttonStyle(.pressable)
     }
@@ -264,6 +274,7 @@ struct GPAHeroCard: View {
                         .font(.system(size: 64, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .contentTransition(.numericText(value: grades.gpa ?? 0))
+                        .animation(.smooth(duration: 0.5), value: grades.gpa)
                     Text("/ 6")
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(Theme.textTertiary)
@@ -299,6 +310,7 @@ struct SemesterTrendCard: View {
     let semesters: [Semester]
 
     @Environment(\.strings) private var s
+    @State private var progress = 0.0
 
     var body: some View {
         GlassCard {
@@ -310,14 +322,14 @@ struct SemesterTrendCard: View {
                     AreaMark(
                         x: .value("Semester", label(for: semester)),
                         yStart: .value("Base", 2.0),
-                        yEnd: .value("Average", semester.average ?? 2)
+                        yEnd: .value("Average", grown(semester))
                     )
                     .interpolationMethod(.catmullRom)
                     .foregroundStyle(LinearGradient(colors: [Theme.accentBright.opacity(0.45), .clear], startPoint: .top, endPoint: .bottom))
 
                     LineMark(
                         x: .value("Semester", label(for: semester)),
-                        y: .value("Average", semester.average ?? 2)
+                        y: .value("Average", grown(semester))
                     )
                     .interpolationMethod(.catmullRom)
                     .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
@@ -325,7 +337,7 @@ struct SemesterTrendCard: View {
 
                     PointMark(
                         x: .value("Semester", label(for: semester)),
-                        y: .value("Average", semester.average ?? 2)
+                        y: .value("Average", grown(semester))
                     )
                     .symbolSize(40)
                     .foregroundStyle(.white)
@@ -343,8 +355,15 @@ struct SemesterTrendCard: View {
                     }
                 }
                 .frame(height: 170)
+                .onAppear {
+                    withAnimation(.smooth(duration: 0.9).delay(0.1)) { progress = 1 }
+                }
             }
         }
+    }
+
+    private func grown(_ semester: Semester) -> Double {
+        2 + ((semester.average ?? 2) - 2) * progress
     }
 
     private func label(for semester: Semester) -> String {

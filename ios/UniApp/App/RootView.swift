@@ -7,37 +7,46 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var isLocked = false
+    @State private var wasActive = false
 
     var body: some View {
         ZStack {
+            AppBackground(glow: session.phase == .launching ? 0 : 1)
+
             switch session.phase {
             case .launching:
                 SplashView()
+                    .transition(.opacity)
             case .signedOut:
                 LoginView()
-                    .transition(.opacity.combined(with: .scale(scale: 1.04)))
+                    .transition(.blurReplace)
             case .signedIn:
                 MainTabView()
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    .transition(.blurReplace)
             }
 
             if session.phase == .signedIn && isLocked {
                 LockView { isLocked = false }
-                    .transition(.opacity)
+                    .transition(.blurReplace)
                     .zIndex(2)
-            } else if session.phase == .signedIn && scenePhase != .active {
+            } else if session.phase == .signedIn && wasActive && scenePhase != .active {
                 PrivacyShield()
                     .transition(.opacity)
                     .zIndex(1)
             }
         }
-        .animation(.smooth(duration: 0.45), value: session.phase)
-        .animation(.smooth(duration: 0.25), value: isLocked)
+        .animation(.smooth(duration: 0.55), value: session.phase)
+        .animation(isLocked ? nil : .smooth(duration: 0.35), value: isLocked)
+        .animation(scenePhase == .active ? .smooth(duration: 0.3) : nil, value: scenePhase)
+        .animation(.smooth(duration: 0.35), value: settings.language)
         .task {
-            session.bootstrap()
             isLocked = settings.biometricLock
+            session.bootstrap()
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            if phase == .active {
+                wasActive = true
+            }
             if phase == .background && settings.biometricLock {
                 isLocked = true
             }
@@ -46,15 +55,20 @@ struct RootView: View {
 }
 
 struct SplashView: View {
+    @State private var appeared = false
+
     var body: some View {
-        ZStack {
-            AppBackground()
-            Image("Logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 96, height: 96)
-                .shadow(color: Theme.accentBright.opacity(0.7), radius: 28)
-        }
+        Image("Logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 96, height: 96)
+            .shadow(color: Theme.accentBright.opacity(0.7), radius: 28)
+            .opacity(appeared ? 1 : 0)
+            .scaleEffect(appeared ? 1 : 0.9)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                withAnimation(.smooth(duration: 0.4)) { appeared = true }
+            }
     }
 }
 

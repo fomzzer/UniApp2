@@ -99,15 +99,50 @@ def test_dormitory_status():
     assert not parsers.parse_dormitory(page).accommodated
 
 
+def test_university_email_wins_over_personal():
+    page = soup(
+        "<table id=info><tr><td>E-mail:<br>Имейл в ТУ - София:</td>"
+        "<td>me@gmail.com<br>ivan@tu-sofia.bg<br><font size=1>Първоначалната парола</font></td></tr></table>"
+    )
+    student = parsers.build_student("Иван", "121221089", parsers.parse_info(page))
+    assert student.email == "ivan@tu-sofia.bg"
+
+
+def test_personal_email_is_used_without_university_one():
+    page = soup("<table id=info><tr><td>E-mail:</td><td>me@gmail.com</td></tr></table>")
+    student = parsers.build_student("Иван", "121221089", parsers.parse_info(page))
+    assert student.email == "me@gmail.com"
+
+
 def test_failure_reason():
     page = soup("<font color=red>Грешен текст от изображението!</font>")
     assert "изображението" in parsers.parse_failure_reason(page)
 
 
-def test_real_grades_table_layout():
+def _fixture() -> str:
     from pathlib import Path
 
-    page = soup((Path(__file__).parent / "fixtures" / "grades_table.html").read_text(encoding="utf-8"))
+    return (Path(__file__).parent / "fixtures" / "grades_table.html").read_text(encoding="utf-8")
+
+
+def test_unclosed_cells_do_not_leak_into_previous_rows():
+    markup = _fixture().replace("</td>", "").replace("</tr>", "")
+    for parser in ("lxml", "html.parser"):
+        grades = parsers.build_grades(parsers.parse_grade_rows(BeautifulSoup(markup, parser)))
+        assert [semester.number for semester in grades.semesters] == [3, 2, 1]
+        first = {subject.name: subject for subject in grades.semesters[2].subjects}
+        analysis = first["Математически и матричен анализ"]
+        assert analysis.grade == 3 and len(analysis.attempts) == 1
+        second = {subject.name: subject for subject in grades.semesters[1].subjects}
+        assert len(second["Математическо моделиране и диференциални уравнения"].attempts) == 2
+        current = {subject.name: subject for subject in grades.semesters[0].subjects}
+        algorithms = current["Синтез и анализ на алгоритми"]
+        assert algorithms.grade is None and not algorithms.credited and not algorithms.attempts
+        assert grades.graded_count == 10 and grades.credited_count == 3
+
+
+def test_real_grades_table_layout():
+    page = soup(_fixture())
     grades = parsers.build_grades(parsers.parse_grade_rows(page))
     assert [semester.number for semester in grades.semesters] == [3, 2, 1]
     assert grades.semesters[0].current

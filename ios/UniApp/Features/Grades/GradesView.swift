@@ -29,19 +29,26 @@ struct GradesView: View {
                         } else {
                             if query.isEmpty {
                                 summary(grades)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
                                 semesterChips(grades.semesters)
+                                    .transition(.opacity)
                             }
                             let visible = filtered(grades.semesters)
                             if visible.isEmpty {
                                 ContentUnavailableView.search(text: query)
+                                    .transition(.opacity)
                             }
                             ForEach(visible) { semester in
                                 semesterSection(semester)
+                                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
                             }
                         }
                     }
                     .padding(.horizontal, Theme.pagePadding)
                     .padding(.bottom, 32)
+                    .animation(.smooth(duration: 0.35), value: query)
+                    .animation(.smooth(duration: 0.35), value: semesterFilter)
+                    .animation(.smooth(duration: 0.4), value: grades)
                 }
             }
             .background { AppBackground(glow: 0.75) }
@@ -173,7 +180,7 @@ struct GradesView: View {
                         } label: {
                             SubjectRow(subject: subject)
                                 .padding(.horizontal, 12)
-                                .contentShape(Rectangle())
+                                .contentShape(.rect)
                         }
                         .buttonStyle(.pressable)
                         if index < semester.subjects.count - 1 {
@@ -231,15 +238,21 @@ struct GradeDistributionChart: View {
         var id: Int { grade }
     }
 
+    @State private var progress = 0.0
+
     private var entries: [Entry] {
         (2...6).reversed().map { Entry(grade: $0, count: distribution[String($0)] ?? 0) }
+    }
+
+    private var maxCount: Int {
+        max(1, entries.map(\.count).max() ?? 1)
     }
 
     var body: some View {
         Chart(entries) { entry in
             BarMark(
                 x: .value("Grade", String(entry.grade)),
-                y: .value("Count", entry.count)
+                y: .value("Count", Double(entry.count) * progress)
             )
             .cornerRadius(8)
             .foregroundStyle(Theme.gradeColor(entry.grade).gradient)
@@ -252,6 +265,7 @@ struct GradeDistributionChart: View {
             }
         }
         .chartYAxis(.hidden)
+        .chartYScale(domain: 0...Double(maxCount) * 1.25)
         .chartXAxis {
             AxisMarks { _ in
                 AxisValueLabel()
@@ -260,6 +274,10 @@ struct GradeDistributionChart: View {
             }
         }
         .frame(height: 120)
+        .animation(.smooth(duration: 0.5), value: distribution)
+        .onAppear {
+            withAnimation(.smooth(duration: 0.8).delay(0.1)) { progress = 1 }
+        }
     }
 }
 

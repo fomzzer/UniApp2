@@ -1,3 +1,4 @@
+import copy
 import re
 from dataclasses import dataclass, field
 
@@ -67,7 +68,7 @@ def parse_info(soup: BeautifulSoup) -> dict[str, str]:
             values = [value for value in values if value]
             if not keys:
                 continue
-            if len(keys) > 1 and len(keys) == len(values):
+            if len(keys) > 1 and len(values) >= len(keys):
                 info.update(zip(keys, values))
             else:
                 info[keys[0]] = values[0] if values else ""
@@ -103,6 +104,17 @@ def _email(text: str | None) -> str | None:
     return match.group() if match else None
 
 
+UNIVERSITY_DOMAIN = "tu-sofia.bg"
+
+
+def _university_email(info: dict[str, str]) -> str | None:
+    emails = [match.group() for value in info.values() for match in EMAIL_PATTERN.finditer(value)]
+    university = [email for email in emails if email.lower().endswith(UNIVERSITY_DOMAIN)]
+    if university:
+        return university[0]
+    return _email(_pick(info, "имейл", "e-mail", "email", "поща")) or (emails[0] if emails else None)
+
+
 def build_student(name: str, faculty_no: str, info: dict[str, str]) -> Student:
     semester = _int_from(_pick(info, "семест"))
     course = (semester + 1) // 2 if semester else None
@@ -118,7 +130,7 @@ def build_student(name: str, faculty_no: str, info: dict[str, str]) -> Student:
         course=course,
         group=_pick(info, "група"),
         stream=_pick(info, "поток"),
-        email=_email(_pick(info, "имейл", "e-mail", "email")),
+        email=_university_email(info),
         details=info,
     )
 
@@ -164,6 +176,13 @@ def _grade_row(name: str, remainder: str, attempts_text: str) -> GradeRow | None
     return row
 
 
+def _own_cell(cell):
+    own = copy.copy(cell)
+    for nested in own.find_all(["tr", "td", "th", "table"]):
+        nested.decompose()
+    return own
+
+
 def _row_from_cell(cell) -> GradeRow | None:
     bold = cell.find("b")
     multiline = cell.get_text("\n", strip=True)
@@ -192,7 +211,8 @@ def parse_grade_rows(soup: BeautifulSoup) -> list[SemesterRows]:
         cells = row.find_all("td")
         if not cells:
             continue
-        flat = clean(cells[0].get_text(" ", strip=True))
+        cell = _own_cell(cells[0])
+        flat = clean(cell.get_text(" ", strip=True))
         semester_match = SEMESTER_PATTERN.match(flat)
         grade_row: GradeRow | None
         if semester_match:
@@ -206,7 +226,7 @@ def parse_grade_rows(soup: BeautifulSoup) -> list[SemesterRows]:
                 continue
             grade_row = _row_from_text(rest, rest)
         else:
-            grade_row = _row_from_cell(cells[0])
+            grade_row = _row_from_cell(cell)
         if grade_row is None:
             continue
         if current is None:
