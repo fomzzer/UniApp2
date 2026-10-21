@@ -6,33 +6,10 @@ struct ScheduleView: View {
     @Environment(\.strings) private var s
 
     @AppStorage("schedule.kind") private var kind: ScheduleKind = .lectures
-    @State private var degree = "bachelor"
-    @State private var facultySlug: String?
-    @State private var majorSlug: String?
-    @State private var year: Int?
-    @State private var stream: String?
+    @State private var filters: [ScheduleKind: ScheduleFilter] = [:]
+    @State private var resolvedKinds: Set<ScheduleKind> = []
+    @State private var missingKinds: Set<ScheduleKind> = []
     @State private var opened: ScheduleItem?
-    @State private var appliedKind: ScheduleKind?
-    @State private var wanted: Target?
-    @State private var mineMissing = false
-
-    private struct Option: Hashable, Identifiable {
-        let id: String
-        let title: String
-
-        var short: String {
-            let acronym = ScheduleMatcher.acronym(title)
-            return acronym.count >= 2 && acronym.count < title.count ? acronym : title
-        }
-    }
-
-    private struct Target {
-        var degree: String?
-        var facultySlug: String?
-        var majorSlug: String?
-        var year: Int?
-        var stream: String?
-    }
 
     var body: some View {
         NavigationStack {
@@ -50,23 +27,32 @@ struct ScheduleView: View {
                             .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     }
 
-                    filterCard
-                    content
-                        .animation(.smooth(duration: 0.35), value: contentKey)
+                    let catalog = self.catalog
+                    let filter = catalog.sanitized(filters[kind] ?? ScheduleFilter())
+                    filterCard(catalog, filter)
+                    content(catalog, filter)
+                        .animation(.smooth(duration: 0.35), value: contentKey(catalog, filter))
                 }
                 .padding(.horizontal, Theme.pagePadding)
                 .padding(.bottom, 32)
             }
             .background { AppBackground(glow: 0.75) }
             .navigationTitle(s.tabSchedule)
-            .refreshable {
-                await store.load(kind, force: true)
-                applySelection()
-            }
+            .refreshable { await store.load(kind, force: true) }
             .task(id: kind) {
-                applySelection()
+                resolveIfNeeded()
                 await store.load(kind)
-                applySelection()
+                resolveIfNeeded()
+            }
+            .onChange(of: store.items(kind)) {
+                if missingKinds.contains(kind) {
+                    resolvedKinds.remove(kind)
+                }
+                resolveIfNeeded()
+            }
+            .onChange(of: session.snapshot?.student) {
+                resolvedKinds = resolvedKinds.filter { filters[$0]?.facultySlug != nil }
+                resolveIfNeeded()
             }
             .sheet(item: $opened) { item in
                 ScheduleDocumentView(item: item)
@@ -74,102 +60,76 @@ struct ScheduleView: View {
         }
     }
 
-    private var items: [ScheduleItem] {
-        store.items(kind)
+    private var catalog: ScheduleCatalog {
+        ScheduleCatalog(items: store.items(kind))
     }
 
-    private var degreeItems: [ScheduleItem] {
-        items.filter { $0.degree == degree }
+    private var currentFilter: ScheduleFilter {
+        catalog.sanitized(filters[kind] ?? ScheduleFilter())
     }
 
-    private var degrees: [String] {
-        let available = Array(Set(items.map(\.degree))).sorted()
-        return available.isEmpty ? ["bachelor", "master"] : available
-    }
-
-    private var faculties: [Option] {
-        unique(degreeItems.map { Option(id: $0.facultySlug, title: $0.faculty) }).sorted { $0.title < $1.title }
-    }
-
-    private var majors: [Option] {
-        guard let facultySlug else { return [] }
-        let scoped = degreeItems.filter { $0.facultySlug == facultySlug }
-        return unique(scoped.map { Option(id: $0.majorSlug, title: $0.major) }).sorted { $0.title < $1.title }
-    }
-
-    private var years: [Int] {
-        Array(Set(majorItems.compactMap(\.year))).sorted()
-    }
-
-    private var streams: [String] {
-        let scoped = majorItems.filter { year == nil || $0.year == year }
-        let values = scoped.compactMap(\.stream)
-        var seen = Set<String>()
-        return values.filter { seen.insert($0).inserted }.sorted { (Int($0) ?? 999, $0) < (Int($1) ?? 999, $1) }
-    }
-
-    private var majorItems: [ScheduleItem] {
-        guard let facultySlug, let majorSlug else { return [] }
-        return degreeItems.filter { $0.facultySlug == facultySlug && $0.majorSlug == majorSlug }
-    }
-
-    private var results: [ScheduleItem] {
-        majorItems.filter { (year == nil || $0.year == year) && (stream == nil || $0.stream == stream) }
-    }
-
-    private func unique(_ options: [Option]) -> [Option] {
-        var seen = Set<String>()
-        return options.filter { seen.insert($0.id).inserted }
+    private func commit(_ filter: ScheduleFilter) {
+        filters[kind] = filter
+        resolvedKinds.insert(kind)
+        missingKinds.remove(kind)
+        guard filter.hasMajor else { return }
+        for other in ScheduleKind.allCases where other != kind {
+            filters[other] = nil
+            resolvedKinds.remove(other)
+        }
     }
 
     private var degreeBinding: Binding<String> {
-        Binding(get: { degree }, set: { value in
-            degree = value
-            mineMissing = false
-            facultySlug = nil
-            majorSlug = nil
-            year = nil
-            stream = nil
+        Binding(get: { currentFilter.degree }, set: { value in
+            commit(ScheduleFilter(degree: value))
         })
     }
 
     private var facultyBinding: Binding<String?> {
-        Binding(get: { facultySlug }, set: { value in
-            facultySlug = value
-            mineMissing = false
-            majorSlug = nil
-            year = nil
-            stream = nil
+        Binding(get: { currentFilter.facultySlug }, set: { value in
+            commit(ScheduleFilter(degree: currentFilter.degree, facultySlug: value))
         })
     }
 
     private var majorBinding: Binding<String?> {
-        Binding(get: { majorSlug }, set: { value in
-            majorSlug = value
-            year = nil
-            stream = nil
+        Binding(get: { currentFilter.majorSlug }, set: { value in
+            let filter = currentFilter
+            commit(ScheduleFilter(degree: filter.degree, facultySlug: filter.facultySlug, majorSlug: value))
         })
     }
 
     private var yearBinding: Binding<Int?> {
-        Binding(get: { year }, set: { value in
-            year = value
-            stream = nil
+        Binding(get: { currentFilter.year }, set: { value in
+            var filter = currentFilter
+            filter.year = value
+            commit(catalog.sanitized(filter))
         })
     }
 
-    private var filterCard: some View {
-        GlassCard(padding: 16) {
+    private var streamBinding: Binding<String?> {
+        Binding(get: { currentFilter.stream }, set: { value in
+            var filter = currentFilter
+            filter.stream = value
+            commit(filter)
+        })
+    }
+
+    private func filterCard(_ catalog: ScheduleCatalog, _ filter: ScheduleFilter) -> some View {
+        let faculties = catalog.faculties(filter)
+        let majors = catalog.majors(filter)
+        let years = catalog.years(filter)
+        let streams = catalog.streams(filter)
+        return GlassCard(padding: 16) {
             VStack(spacing: 0) {
-                filterRow(s.degree, value: s.degreeTitle(degree)) {
+                filterRow(s.degree, value: s.degreeTitle(filter.degree)) {
                     Picker(s.degree, selection: degreeBinding.animation(.smooth(duration: 0.35))) {
-                        ForEach(degrees, id: \.self) { value in
+                        ForEach(catalog.degrees, id: \.self) { value in
                             Text(s.degreeTitle(value)).tag(value)
                         }
                     }
                 }
                 Divider().overlay(Theme.separator)
-                filterRow(s.faculty, value: faculties.first { $0.id == facultySlug }?.short) {
+                filterRow(s.faculty, value: faculties.first { $0.id == filter.facultySlug }?.short) {
                     Picker(s.faculty, selection: facultyBinding.animation(.smooth(duration: 0.35))) {
                         Text(s.choose).tag(String?.none)
                         ForEach(faculties) { option in
@@ -177,8 +137,9 @@ struct ScheduleView: View {
                         }
                     }
                 }
+                .disabled(faculties.isEmpty)
                 Divider().overlay(Theme.separator)
-                filterRow(s.major, value: majors.first { $0.id == majorSlug }?.short) {
+                filterRow(s.major, value: majors.first { $0.id == filter.majorSlug }?.short) {
                     Picker(s.major, selection: majorBinding.animation(.smooth(duration: 0.35))) {
                         Text(s.choose).tag(String?.none)
                         ForEach(majors) { option in
@@ -186,9 +147,9 @@ struct ScheduleView: View {
                         }
                     }
                 }
-                .disabled(facultySlug == nil)
+                .disabled(majors.isEmpty)
                 Divider().overlay(Theme.separator)
-                filterRow(s.year, value: year.flatMap { years.contains($0) ? String($0) : nil }) {
+                filterRow(s.year, value: filter.year.map(String.init)) {
                     Picker(s.year, selection: yearBinding.animation(.smooth(duration: 0.35))) {
                         Text(s.choose).tag(Int?.none)
                         ForEach(years, id: \.self) { value in
@@ -196,23 +157,19 @@ struct ScheduleView: View {
                         }
                     }
                 }
-                .disabled(majorSlug == nil || years.isEmpty)
+                .disabled(years.isEmpty)
                 Divider().overlay(Theme.separator)
-                filterRow(s.stream, value: stream.flatMap { streams.contains($0) ? $0 : nil }) {
-                    Picker(s.stream, selection: $stream.animation(.smooth(duration: 0.35))) {
+                filterRow(s.stream, value: filter.stream) {
+                    Picker(s.stream, selection: streamBinding.animation(.smooth(duration: 0.35))) {
                         Text(s.choose).tag(String?.none)
                         ForEach(streams, id: \.self) { value in
                             Text(value).tag(Optional(value))
                         }
                     }
                 }
-                .disabled(majorSlug == nil || streams.isEmpty)
+                .disabled(streams.isEmpty)
             }
         }
-    }
-
-    private var selectedMajorTitle: String? {
-        majors.first { $0.id == majorSlug }?.title
     }
 
     private func filterRow<Content: View>(_ title: String, value: String?, @ViewBuilder picker: () -> Content) -> some View {
@@ -222,23 +179,24 @@ struct ScheduleView: View {
         }
     }
 
-    private var contentKey: Int {
-        if items.isEmpty && store.isLoading(kind) { return 0 }
-        if store.errors[kind] != nil && items.isEmpty { return 1 }
-        if items.isEmpty { return 2 }
-        if majorSlug == nil { return 3 }
-        return results.isEmpty ? 4 : 5
+    private func contentKey(_ catalog: ScheduleCatalog, _ filter: ScheduleFilter) -> Int {
+        if catalog.items.isEmpty && store.isLoading(kind) { return 0 }
+        if store.errors[kind] != nil && catalog.items.isEmpty { return 1 }
+        if catalog.items.isEmpty { return 2 }
+        if !filter.hasMajor { return 3 }
+        return catalog.results(filter).isEmpty ? 4 : 5
     }
 
     @ViewBuilder
-    private var content: some View {
-        if items.isEmpty && store.isLoading(kind) {
+    private func content(_ catalog: ScheduleCatalog, _ filter: ScheduleFilter) -> some View {
+        let results = catalog.results(filter)
+        if catalog.items.isEmpty && store.isLoading(kind) {
             ProgressView(s.loading)
                 .tint(.white)
                 .foregroundStyle(Theme.textSecondary)
                 .padding(.top, 40)
                 .transition(.opacity)
-        } else if let error = store.errors[kind], items.isEmpty {
+        } else if let error = store.errors[kind], catalog.items.isEmpty {
             ContentUnavailableView {
                 Label(s.message(for: error), systemImage: "wifi.exclamationmark")
             } description: {
@@ -250,10 +208,10 @@ struct ScheduleView: View {
                 .buttonStyle(.glassProminent)
                 .tint(Theme.accent)
             }
-        } else if items.isEmpty {
+        } else if catalog.items.isEmpty {
             ContentUnavailableView(s.noSchedules, systemImage: "calendar.badge.exclamationmark", description: Text(s.noSchedulesHint))
-        } else if majorSlug == nil {
-            Text(mineMissing ? s.mineNotPublished : s.selectMajorHint)
+        } else if !filter.hasMajor {
+            Text(missingKinds.contains(kind) ? s.mineNotPublished : s.selectMajorHint)
                 .font(.subheadline)
                 .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
@@ -263,7 +221,7 @@ struct ScheduleView: View {
             ContentUnavailableView(s.noSchedules, systemImage: "calendar.badge.exclamationmark", description: Text(s.noSchedulesHint))
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: selectedMajorTitle ?? s.results)
+                SectionHeader(title: catalog.majors(filter).first { $0.id == filter.majorSlug }?.title ?? s.results)
                 ForEach(results) { item in
                     resultRow(item)
                         .transition(.opacity.combined(with: .scale(scale: 0.97)))
@@ -343,52 +301,42 @@ struct ScheduleView: View {
         }
     }
 
-    private func applySelection() {
-        guard appliedKind != kind else { return }
-        if majorSlug != nil {
-            wanted = Target(degree: degree, facultySlug: facultySlug, majorSlug: majorSlug, year: year, stream: stream)
-        }
+    private func resolveIfNeeded() {
+        let items = store.items(kind)
+        guard !resolvedKinds.contains(kind), !items.isEmpty else { return }
+        let student = session.snapshot?.student
+        let target = carriedFilter ?? mineFilter(student)
+        let resolved = ScheduleCatalog(items: items).resolve(target, student: student)
+        let missing = !resolved.hasMajor && (target?.hasMajor == true || student?.specialty?.isEmpty == false)
         var transaction = Transaction()
         transaction.disablesAnimations = true
-        guard !items.isEmpty else {
-            withTransaction(transaction) {
-                facultySlug = nil
-                majorSlug = nil
-                year = nil
-                stream = nil
-                mineMissing = false
+        withTransaction(transaction) {
+            filters[kind] = resolved
+            resolvedKinds.insert(kind)
+            if missing {
+                missingKinds.insert(kind)
+            } else {
+                missingKinds.remove(kind)
             }
-            return
         }
-        appliedKind = kind
-        let student = session.snapshot?.student
-        let target = wanted ?? defaultTarget(student)
-        withTransaction(transaction) { resolve(target, student: student) }
     }
 
-    private func defaultTarget(_ student: Student?) -> Target {
+    private var carriedFilter: ScheduleFilter? {
+        ScheduleKind.allCases
+            .filter { $0 != kind }
+            .compactMap { filters[$0] }
+            .first { $0.hasMajor }
+    }
+
+    private func mineFilter(_ student: Student?) -> ScheduleFilter? {
         let order = [kind] + ScheduleKind.allCases.filter { $0 != kind }
-        guard let mine = order.lazy.compactMap({ store.myItem($0, student: student) }).first else {
-            return Target(degree: student?.isMaster == true ? "master" : nil, year: student?.course, stream: student?.stream)
-        }
+        guard let mine = order.lazy.compactMap({ store.myItem($0, student: student) }).first else { return nil }
+        var filter = ScheduleFilter(item: mine)
         if let pinned = store.pinned, pinned.matches(mine) {
-            return Target(degree: mine.degree, facultySlug: mine.facultySlug, majorSlug: mine.majorSlug, year: pinned.year ?? student?.course, stream: pinned.stream ?? student?.stream)
+            filter.year = pinned.year
+            filter.stream = pinned.stream
         }
-        return Target(degree: mine.degree, facultySlug: mine.facultySlug, majorSlug: mine.majorSlug, year: mine.year ?? student?.course, stream: mine.stream ?? student?.stream)
-    }
-
-    private func resolve(_ target: Target, student: Student?) {
-        let available = degrees
-        let fallbackDegree = student?.isMaster == true && available.contains("master") ? "master" : available.contains("bachelor") ? "bachelor" : available.first ?? "bachelor"
-        degree = target.degree.flatMap { available.contains($0) ? $0 : nil } ?? fallbackDegree
-        facultySlug = faculties.first { $0.id == target.facultySlug }?.id
-            ?? faculties.first { ScheduleMatcher.similar(student?.faculty, $0.title) }?.id
-        majorSlug = majors.first { $0.id == target.majorSlug }?.id
-            ?? majors.first { ScheduleMatcher.similar(student?.specialty, $0.title) }?.id
-        year = target.year.flatMap { years.contains($0) ? $0 : nil }
-        let key = ScheduleMatcher.streamKey(target.stream)
-        stream = streams.first { $0 == target.stream } ?? (key == nil ? nil : streams.first { ScheduleMatcher.streamKey($0) == key })
-        mineMissing = majorSlug == nil && (target.majorSlug != nil || student?.specialty?.isEmpty == false)
+        return filter
     }
 }
 

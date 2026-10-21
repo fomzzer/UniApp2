@@ -91,7 +91,9 @@ struct IconBadge: View {
         Image(systemName: systemImage)
             .font(.system(size: size * 0.42, weight: .semibold))
             .foregroundStyle(.white)
+            .contentTransition(.symbolEffect(.replace))
             .frame(width: size, height: size)
             .glassEffect(.regular.tint(tint.opacity(0.6)), in: .rect(cornerRadius: size * 0.32))
+            .animation(.smooth(duration: 0.3), value: tint)
     }
 }

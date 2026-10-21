@@ -99,3 +99,62 @@ final class StringsTests: XCTestCase {
         XCTAssertEqual(Theme.gradeColor(fail), Theme.gradeFail)
     }
 }
+
+final class ScheduleCatalogTests: XCTestCase {
+    private func item(_ id: Int, faculty: String = "fcst", major: String = "kspi", year: Int?, stream: String?) -> ScheduleItem {
+        ScheduleItem(
+            id: id, kind: .lectures, academicYear: "2026/2027", semester: "winter", degree: "bachelor",
+            faculty: faculty == "fcst" ? "Факултет Компютърни системи и технологии" : "Факултет Автоматика",
+            facultySlug: faculty,
+            major: major == "kspi" ? "Компютърно и софтуерно инженерство" : "Автоматика",
+            majorSlug: major,
+            year: year, stream: stream, url: URL(string: "https://example.com/\(id).pdf")!, isPdf: true
+        )
+    }
+
+    private let student = Student(
+        name: "Иван Иванов", facultyNo: "1", faculty: "Факултет Компютърни системи и технологии",
+        specialty: "Компютърно и софтуерно инженерство", degree: nil, educationForm: nil, semester: nil,
+        course: 2, group: nil, stream: "3", email: nil, ean: nil, details: [:]
+    )
+
+    private var catalog: ScheduleCatalog {
+        ScheduleCatalog(items: [
+            item(1, year: 2, stream: "2"),
+            item(2, year: 2, stream: "3"),
+            item(3, year: 3, stream: "1"),
+            item(4, faculty: "fa", major: "a", year: 2, stream: "3"),
+        ])
+    }
+
+    func testResolveFromStudentSelectsEveryLevel() {
+        let filter = catalog.resolve(nil, student: student)
+        XCTAssertEqual(filter, ScheduleFilter(degree: "bachelor", facultySlug: "fcst", majorSlug: "kspi", year: 2, stream: "3"))
+        XCTAssertEqual(catalog.results(filter).map(\.id), [2])
+    }
+
+    func testResolveKeepsCarriedSelection() {
+        let carried = ScheduleFilter(degree: "bachelor", facultySlug: "fa", majorSlug: "a", year: 2, stream: "3")
+        XCTAssertEqual(catalog.resolve(carried, student: student), carried)
+    }
+
+    func testResolveFallsBackWhenMajorIsNotPublished() {
+        let partial = ScheduleCatalog(items: [item(5, faculty: "fcst", major: "other", year: nil, stream: nil)])
+        let filter = partial.resolve(nil, student: student)
+        XCTAssertEqual(filter.facultySlug, "fcst")
+        XCTAssertNil(filter.majorSlug)
+        XCTAssertNil(filter.year)
+        XCTAssertNil(filter.stream)
+    }
+
+    func testSanitizedDropsValuesMissingFromCatalog() {
+        let stale = ScheduleFilter(degree: "bachelor", facultySlug: "fcst", majorSlug: "kspi", year: 4, stream: "9")
+        XCTAssertEqual(catalog.sanitized(stale), ScheduleFilter(degree: "bachelor", facultySlug: "fcst", majorSlug: "kspi"))
+        XCTAssertEqual(ScheduleCatalog(items: []).sanitized(stale), ScheduleFilter(degree: "bachelor"))
+    }
+
+    func testStreamMatchingIgnoresFormatting() {
+        let named = ScheduleCatalog(items: [item(6, year: 2, stream: "Поток 3")])
+        XCTAssertEqual(named.resolve(nil, student: student).stream, "Поток 3")
+    }
+}

@@ -137,40 +137,55 @@ struct ProfileView: View {
                             showCopied = false
                         }
                     } label: {
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(s.universityEmail)
-                                    .font(.subheadline)
-                                    .foregroundStyle(Theme.textSecondary)
-                                Text(student.email ?? "—")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Theme.accentSoft)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.85)
-                                    .truncationMode(.middle)
-                            }
-                            Spacer(minLength: 8)
-                            if student.email != nil {
-                                Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(showCopied ? Theme.success : Theme.textTertiary)
-                                    .contentTransition(.symbolEffect(.replace))
-                                    .frame(width: 20)
-                            }
+                        contactRow(
+                            systemImage: showCopied ? "checkmark" : "envelope.fill",
+                            tint: showCopied ? Theme.success : Theme.accent,
+                            title: s.universityEmail
+                        ) {
+                            emailText(student.email)
                         }
-                        .padding(.vertical, 10)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.pressable)
+                    .disabled(student.email == nil)
                     Divider().overlay(Theme.separator)
-                    InfoRow(
-                        title: s.dormitory,
-                        value: dormitory.status == nil ? s.noData : (dormitory.accommodated ? s.accommodated : s.notAccommodated),
-                        valueColor: dormitory.accommodated ? Theme.success : Theme.textPrimary
-                    )
+                    contactRow(
+                        systemImage: "bed.double.fill",
+                        tint: dormitory.accommodated ? Theme.success : Theme.gradeGood,
+                        title: s.dormitory
+                    ) {
+                        Text(dormitory.status == nil ? s.noData : (dormitory.accommodated ? s.accommodated : s.notAccommodated))
+                            .foregroundStyle(dormitory.accommodated ? Theme.success : .white)
+                    }
                 }
             }
         }
+    }
+
+    private func contactRow<Value: View>(systemImage: String, tint: Color, title: String, @ViewBuilder value: () -> Value) -> some View {
+        HStack(spacing: 14) {
+            IconBadge(systemImage: systemImage, tint: tint, size: 36)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                value()
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
+    }
+
+    private func emailText(_ email: String?) -> Text {
+        guard let email, let at = email.firstIndex(of: "@") else {
+            return Text(email ?? "—").foregroundStyle(.white)
+        }
+        let name = Text(email[..<at]).foregroundStyle(.white)
+        let domain = Text(email[at...]).foregroundStyle(Theme.textSecondary)
+        return Text("\(name)\(domain)")
     }
 
     private func detailsCard(_ details: [String: String]) -> some View {
