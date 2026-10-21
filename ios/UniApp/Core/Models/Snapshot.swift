@@ -52,7 +52,7 @@ struct Grades: Codable, Hashable, Sendable {
     var semesters: [Semester]
 
     var latestSemester: Semester? {
-        semesters.first { !$0.subjects.isEmpty }
+        semesters.first { semester in semester.subjects.contains { $0.grade != nil } } ?? semesters.first { !$0.subjects.isEmpty }
     }
 
     var trend: [Semester] {
@@ -63,10 +63,13 @@ struct Grades: Codable, Hashable, Sendable {
 struct Semester: Codable, Hashable, Sendable, Identifiable {
     var number: Int?
     var title: String
+    var current: Bool?
     var average: Double?
     var subjects: [Subject]
 
     var id: String { title }
+
+    var isCurrent: Bool { current ?? false }
 }
 
 struct Subject: Codable, Hashable, Sendable, Identifiable {
@@ -93,6 +96,12 @@ struct Attempt: Codable, Hashable, Sendable {
     var kind: Kind
     var grade: Int
     var label: String
+    var date: String?
+
+    var day: Date? {
+        guard let date else { return nil }
+        return try? Date(date, strategy: Date.ISO8601FormatStyle().year().month().day())
+    }
 }
 
 struct Dormitory: Codable, Hashable, Sendable {

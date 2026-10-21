@@ -145,6 +145,14 @@ struct GradesView: View {
                 Text(semester.title)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.white)
+                if semester.isCurrent {
+                    Text(s.currentSemester)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .glassEffect(.regular.tint(Theme.accent.opacity(0.7)), in: .capsule)
+                }
                 Spacer()
                 if let average = semester.average {
                     Text("⌀ " + average.formatted(.number.precision(.fractionLength(2)).locale(locale)))
@@ -259,6 +267,7 @@ struct SubjectDetailSheet: View {
     let selection: SubjectSelection
 
     @Environment(\.strings) private var s
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     private var subject: Subject { selection.subject }
@@ -294,9 +303,16 @@ struct SubjectDetailSheet: View {
                                 VStack(spacing: 0) {
                                     ForEach(Array(subject.attempts.enumerated()), id: \.offset) { index, attempt in
                                         HStack {
-                                            Text(attempt.kind == .regular ? s.regularSession : s.retakeSession)
-                                                .font(.subheadline)
-                                                .foregroundStyle(Theme.textSecondary)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(attempt.kind == .regular ? s.regularSession : s.retakeSession)
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(Theme.textSecondary)
+                                                if let day = attempt.day {
+                                                    Text(day.formatted(.dateTime.day().month(.wide).year().locale(locale)))
+                                                        .font(.caption)
+                                                        .foregroundStyle(Theme.textTertiary)
+                                                }
+                                            }
                                             Spacer()
                                             Text(attempt.label)
                                                 .font(.subheadline.weight(.semibold))

@@ -6,18 +6,29 @@ from bs4 import BeautifulSoup
 from ..models import Attempt, Dormitory, Grades, Semester, Student, Subject
 
 GRADE_PATTERN = re.compile(
-    r"((?:Слаб|Среден|Добър|Мн\.\s*добър|Много\s*добър|Отличен))\s*\((\d)\)\s*\((редовна|поправителна|ликвидационна)\)",
+    r"((?:Слаб|Среден|Добър|Мн\.\s*добър|Много\s*добър|Отличен))\s*\((\d)\)\s*\((редовна|поправителна|ликвидационна)\)"
+    r"(?:[^\n]*?от\s*(\d{2})\.(\d{2})\.(\d{4}))?",
     re.IGNORECASE,
 )
 SEMESTER_PATTERN = re.compile(r"^(\d+)\s*сем\.?\s*(.*)$", re.IGNORECASE)
+CURRENT_MARK = re.compile(r"^\(\s*текущ\s*\)\s*", re.IGNORECASE)
 CREDITED_MARK = "зачита се"
+ATTEMPT_KINDS = ("редовна", "поправителна", "ликвидационна")
+
+
+@dataclass(frozen=True)
+class ParsedAttempt:
+    kind: str
+    grade: int
+    label: str
+    date: str | None = None
 
 
 @dataclass
 class GradeRow:
     subject: str
     control: str
-    attempts: list[tuple[str, int, str]] = field(default_factory=list)
+    attempts: list[ParsedAttempt] = field(default_factory=list)
     credited: bool = False
 
 
@@ -25,6 +36,7 @@ class GradeRow:
 class SemesterRows:
     title: str
     number: int | None
+    current: bool = False
     rows: list[GradeRow] = field(default_factory=list)
 
 
@@ -119,42 +131,83 @@ def _find_grades_table(soup: BeautifulSoup):
     return None
 
 
+def _attempts(text: str) -> list[ParsedAttempt]:
+    attempts: list[ParsedAttempt] = []
+    for match in GRADE_PATTERN.finditer(text):
+        label, value, kind, day, month, year = match.groups()
+        attempts.append(
+            ParsedAttempt(
+                kind="regular" if kind.lower() == "редовна" else "retake",
+                grade=int(value),
+                label=clean(label),
+                date=f"{year}-{month}-{day}" if year else None,
+            )
+        )
+    return attempts
+
+
+def _grade_row(name: str, remainder: str, attempts_text: str) -> GradeRow | None:
+    if not name:
+        return None
+    control_match = re.search(r"\(([^()]*?)\)", remainder)
+    control = clean(control_match.group(1)) if control_match else ""
+    if control.isdigit() or control.lower() in ATTEMPT_KINDS or control.lower() == CREDITED_MARK:
+        control = ""
+    row = GradeRow(
+        subject=name,
+        control=control,
+        attempts=_attempts(attempts_text),
+        credited=CREDITED_MARK in remainder.lower(),
+    )
+    if not row.control and not row.attempts and not row.credited:
+        return None
+    return row
+
+
+def _row_from_cell(cell) -> GradeRow | None:
+    bold = cell.find("b")
+    multiline = cell.get_text("\n", strip=True)
+    if bold is None:
+        return _row_from_text(clean(cell.get_text(" ", strip=True)), multiline)
+    name = clean(bold.get_text(" ", strip=True))
+    flat = clean(cell.get_text(" ", strip=True))
+    remainder = flat[flat.find(name) + len(name):] if name in flat else flat
+    return _grade_row(name, remainder, multiline)
+
+
+def _row_from_text(flat: str, multiline: str) -> GradeRow | None:
+    if "(" not in flat and CREDITED_MARK not in flat.lower():
+        return None
+    name = clean(flat.split("(")[0])
+    return _grade_row(name, flat[len(name):], multiline)
+
+
 def parse_grade_rows(soup: BeautifulSoup) -> list[SemesterRows]:
     table = _find_grades_table(soup)
     if table is None:
         return []
     semesters: list[SemesterRows] = []
     current: SemesterRows | None = None
-    for row in table.find_all("tr")[1:]:
+    for row in table.find_all("tr"):
         cells = row.find_all("td")
         if not cells:
             continue
-        text = clean(cells[0].get_text(" ", strip=True))
-        semester_match = SEMESTER_PATTERN.match(text)
+        flat = clean(cells[0].get_text(" ", strip=True))
+        semester_match = SEMESTER_PATTERN.match(flat)
+        grade_row: GradeRow | None
         if semester_match:
             number = int(semester_match.group(1))
-            current = SemesterRows(title=f"{number} сем.", number=number)
+            rest = semester_match.group(2).strip()
+            is_current = bool(CURRENT_MARK.match(rest))
+            rest = CURRENT_MARK.sub("", rest).strip()
+            current = SemesterRows(title=f"{number} сем.", number=number, current=is_current)
             semesters.append(current)
-            text = semester_match.group(2).strip()
-        if not text:
-            continue
-        lowered = text.lower()
-        if "(" not in text and CREDITED_MARK not in lowered:
-            continue
-        subject = clean(text.split("(")[0])
-        if not subject:
-            continue
-        control_match = re.search(r"\(([^()]*?)\)", text)
-        control = clean(control_match.group(1)) if control_match else ""
-        if control.isdigit() or control.lower() in ("редовна", "поправителна", "ликвидационна"):
-            control = ""
-        grade_row = GradeRow(subject=subject, control=control)
-        if CREDITED_MARK in lowered:
-            grade_row.credited = True
-        for label, value, kind in GRADE_PATTERN.findall(text):
-            attempt_kind = "regular" if kind.lower() == "редовна" else "retake"
-            grade_row.attempts.append((attempt_kind, int(value), clean(label)))
-        if not grade_row.control and not grade_row.attempts and not grade_row.credited:
+            if not rest:
+                continue
+            grade_row = _row_from_text(rest, rest)
+        else:
+            grade_row = _row_from_cell(cells[0])
+        if grade_row is None:
             continue
         if current is None:
             current = SemesterRows(title="Общи", number=None)
@@ -179,16 +232,23 @@ def _merge_rows(rows: list[GradeRow]) -> list[Subject]:
     subjects: list[Subject] = []
     for key in order:
         row = merged[key]
-        attempts = sorted(row.attempts, key=lambda item: 0 if item[0] == "regular" else 1)
-        final = attempts[-1] if attempts else None
+        ranked = sorted(
+            enumerate(row.attempts),
+            key=lambda pair: (0 if pair[1].kind == "regular" else 1, pair[1].date or "", pair[0]),
+        )
+        ordered = [attempt for _, attempt in ranked]
+        final = ordered[-1] if ordered else None
         subjects.append(
             Subject(
                 name=row.subject,
                 control=row.control or None,
-                grade=final[1] if final else None,
-                label=final[2] if final else None,
+                grade=final.grade if final else None,
+                label=final.label if final else None,
                 credited=row.credited and final is None,
-                attempts=[Attempt(kind=kind, grade=value, label=label) for kind, value, label in attempts],
+                attempts=[
+                    Attempt(kind=attempt.kind, grade=attempt.grade, label=attempt.label, date=attempt.date)
+                    for attempt in ordered
+                ],
             )
         )
     return subjects
@@ -210,7 +270,15 @@ def build_grades(semester_rows: list[SemesterRows]) -> Grades:
         all_grades.extend(values)
         credited += sum(1 for subject in subjects if subject.credited)
         if subjects:
-            semesters.append(Semester(number=block.number, title=block.title, average=_average(values), subjects=subjects))
+            semesters.append(
+                Semester(
+                    number=block.number,
+                    title=block.title,
+                    current=block.current,
+                    average=_average(values),
+                    subjects=subjects,
+                )
+            )
     semesters.sort(key=lambda item: item.number if item.number is not None else -1, reverse=True)
     distribution = {str(value): all_grades.count(value) for value in range(6, 1, -1)}
     return Grades(
@@ -227,8 +295,8 @@ def legacy_grade_rows(semester_rows: list[SemesterRows]) -> list[dict]:
     for block in semester_rows:
         result.append({"is_semester": True, "title": block.title})
         for row in block.rows:
-            regular = next((f"{label} ({value})" for kind, value, label in row.attempts if kind == "regular"), "-")
-            retake = next((f"{label} ({value})" for kind, value, label in row.attempts if kind == "retake"), "-")
+            regular = next((f"{item.label} ({item.grade})" for item in row.attempts if item.kind == "regular"), "-")
+            retake = next((f"{item.label} ({item.grade})" for item in reversed(row.attempts) if item.kind == "retake"), "-")
             final = retake if retake != "-" else regular
             if row.credited and final == "-":
                 regular = final = "Зачита се"

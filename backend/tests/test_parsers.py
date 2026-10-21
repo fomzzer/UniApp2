@@ -102,3 +102,33 @@ def test_dormitory_status():
 def test_failure_reason():
     page = soup("<font color=red>Грешен текст от изображението!</font>")
     assert "изображението" in parsers.parse_failure_reason(page)
+
+
+def test_real_grades_table_layout():
+    from pathlib import Path
+
+    page = soup((Path(__file__).parent / "fixtures" / "grades_table.html").read_text(encoding="utf-8"))
+    grades = parsers.build_grades(parsers.parse_grade_rows(page))
+    assert [semester.number for semester in grades.semesters] == [3, 2, 1]
+    assert grades.semesters[0].current
+    assert not grades.semesters[1].current
+
+    second = {subject.name: subject for subject in grades.semesters[1].subjects}
+    modeling = second["Математическо моделиране и диференциални уравнения"]
+    assert modeling.grade == 4
+    assert [(attempt.kind, attempt.grade, attempt.date) for attempt in modeling.attempts] == [
+        ("regular", 2, "2026-05-27"),
+        ("retake", 4, "2026-06-18"),
+    ]
+    assert second["Приложна информатика"].grade == 5
+    assert second["Спорт"].credited and second["Спорт"].control is None
+
+    first = {subject.name: subject for subject in grades.semesters[2].subjects}
+    analysis = first["Математически и матричен анализ"]
+    assert analysis.grade == 3 and len(analysis.attempts) == 1
+    assert first["Обектно-ориентирано програмиране-проект"].control == "Курсов проект"
+
+    assert all(subject.grade is None for subject in grades.semesters[0].subjects)
+    assert grades.gpa == 5.0
+    assert grades.graded_count == 10
+    assert grades.credited_count == 3

@@ -93,6 +93,7 @@ struct Strings: Sendable {
     var attempts: String { t("Опити", "Попытки") }
     var controlForm: String { t("Форма на контрол", "Форма контроля") }
     var semester: String { t("Семестър", "Семестр") }
+    var currentSemester: String { t("текущ", "текущий") }
     var average: String { t("Среден", "Средний") }
     var noGradeYet: String { t("Без оценка", "Без оценки") }
 

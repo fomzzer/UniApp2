@@ -44,6 +44,7 @@ class Attempt(APIModel):
     kind: Literal["regular", "retake"]
     grade: int
     label: str
+    date: str | None = None
 
 
 class Subject(APIModel):
@@ -58,6 +59,7 @@ class Subject(APIModel):
 class Semester(APIModel):
     number: int | None = None
     title: str
+    current: bool = False
     average: float | None = None
     subjects: list[Subject] = Field(default_factory=list)
 
