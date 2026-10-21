@@ -137,8 +137,29 @@ struct ProfileView: View {
                             showCopied = false
                         }
                     } label: {
-                        InfoRow(title: s.universityEmail, value: student.email, valueColor: Theme.accentSoft, singleLine: true)
-                            .contentShape(Rectangle())
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(s.universityEmail)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Theme.textSecondary)
+                                Text(student.email ?? "—")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Theme.accentSoft)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                    .truncationMode(.middle)
+                            }
+                            Spacer(minLength: 8)
+                            if student.email != nil {
+                                Image(systemName: showCopied ? "checkmark" : "doc.on.doc")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(showCopied ? Theme.success : Theme.textTertiary)
+                                    .contentTransition(.symbolEffect(.replace))
+                                    .frame(width: 20)
+                            }
+                        }
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.pressable)
                     Divider().overlay(Theme.separator)

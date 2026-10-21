@@ -66,22 +66,17 @@ struct InfoRow: View {
     let title: String
     let value: String?
     var valueColor: Color = Theme.textPrimary
-    var singleLine = false
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: singleLine ? 10 : 16) {
+        HStack(alignment: .firstTextBaseline, spacing: 16) {
             Text(title)
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSecondary)
-                .layoutPriority(singleLine ? 1 : 0)
-            Spacer(minLength: singleLine ? 6 : 12)
+            Spacer(minLength: 12)
             Text(value?.isEmpty == false ? value! : "—")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(valueColor)
                 .multilineTextAlignment(.trailing)
-                .lineLimit(singleLine ? 1 : nil)
-                .minimumScaleFactor(singleLine ? 0.6 : 1)
-                .truncationMode(.middle)
         }
         .padding(.vertical, 10)
     }
