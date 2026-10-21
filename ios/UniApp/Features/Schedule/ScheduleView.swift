@@ -28,7 +28,7 @@ struct ScheduleView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    Picker(s.tabSchedule, selection: $kind) {
+                    Picker(s.tabSchedule, selection: $kind.animation(.smooth(duration: 0.35))) {
                         ForEach(ScheduleKind.allCases) { kind in
                             Text(s.kindTitle(kind)).tag(kind)
                         }
@@ -42,26 +42,19 @@ struct ScheduleView: View {
 
                     filterCard
                     content
-                        .transition(.opacity)
+                        .animation(.smooth(duration: 0.35), value: contentKey)
                 }
                 .padding(.horizontal, Theme.pagePadding)
                 .padding(.bottom, 32)
-                .animation(.smooth(duration: 0.35), value: kind)
-                .animation(.smooth(duration: 0.35), value: degree)
-                .animation(.smooth(duration: 0.35), value: facultySlug)
-                .animation(.smooth(duration: 0.35), value: majorSlug)
-                .animation(.smooth(duration: 0.35), value: year)
-                .animation(.smooth(duration: 0.35), value: stream)
-                .animation(.smooth(duration: 0.35), value: store.pinned)
-                .animation(.smooth(duration: 0.4), value: items)
-                .animation(.smooth(duration: 0.35), value: store.isLoading(kind))
             }
             .background { AppBackground(glow: 0.75) }
             .navigationTitle(s.tabSchedule)
             .refreshable { await store.load(kind, force: true) }
             .task(id: kind) {
                 await store.load(kind)
-                prefillIfNeeded()
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { prefillIfNeeded() }
             }
             .sheet(item: $opened) { item in
                 ScheduleDocumentView(item: item)
@@ -154,39 +147,48 @@ struct ScheduleView: View {
     private var filterCard: some View {
         GlassCard(padding: 16) {
             VStack(spacing: 0) {
-                filterRow(s.degree) {
-                    Picker(s.degree, selection: degreeBinding) {
+                filterRow(s.degree, value: s.degreeTitle(degree)) {
+                    Picker(s.degree, selection: degreeBinding.animation(.smooth(duration: 0.35))) {
                         ForEach(degrees, id: \.self) { value in
                             Text(s.degreeTitle(value)).tag(value)
                         }
                     }
                 }
                 Divider().overlay(Theme.separator)
-                filterRow(s.faculty) {
-                    optionMenu(s.faculty, options: faculties, selection: facultyBinding)
+                filterRow(s.faculty, value: faculties.first { $0.id == facultySlug }?.short) {
+                    Picker(s.faculty, selection: facultyBinding.animation(.smooth(duration: 0.35))) {
+                        Text(s.choose).tag(String?.none)
+                        ForEach(faculties) { option in
+                            Text(option.title).tag(Optional(option.id))
+                        }
+                    }
                 }
                 Divider().overlay(Theme.separator)
-                filterRow(s.major) {
-                    optionMenu(s.major, options: majors, selection: majorBinding)
+                filterRow(s.major, value: majors.first { $0.id == majorSlug }?.short) {
+                    Picker(s.major, selection: majorBinding.animation(.smooth(duration: 0.35))) {
+                        Text(s.choose).tag(String?.none)
+                        ForEach(majors) { option in
+                            Text(option.title).tag(Optional(option.id))
+                        }
+                    }
                 }
                 .disabled(facultySlug == nil)
                 Divider().overlay(Theme.separator)
-                HStack(spacing: 0) {
-                    filterRow(s.year) {
-                        Picker(s.year, selection: yearBinding) {
-                            Text(s.any).tag(Int?.none)
-                            ForEach(years, id: \.self) { value in
-                                Text("\(value)").tag(Optional(value))
-                            }
+                filterRow(s.year, value: year.map(String.init) ?? s.any) {
+                    Picker(s.year, selection: yearBinding.animation(.smooth(duration: 0.35))) {
+                        Text(s.any).tag(Int?.none)
+                        ForEach(years, id: \.self) { value in
+                            Text("\(value)").tag(Optional(value))
                         }
                     }
-                    Divider().overlay(Theme.separator).frame(height: 28).padding(.horizontal, 10)
-                    filterRow(s.stream) {
-                        Picker(s.stream, selection: $stream) {
-                            Text(s.any).tag(String?.none)
-                            ForEach(streams, id: \.self) { value in
-                                Text(value).tag(Optional(value))
-                            }
+                }
+                .disabled(majorSlug == nil)
+                Divider().overlay(Theme.separator)
+                filterRow(s.stream, value: stream ?? s.any) {
+                    Picker(s.stream, selection: $stream.animation(.smooth(duration: 0.35))) {
+                        Text(s.any).tag(String?.none)
+                        ForEach(streams, id: \.self) { value in
+                            Text(value).tag(Optional(value))
                         }
                     }
                 }
@@ -195,45 +197,23 @@ struct ScheduleView: View {
         }
     }
 
-    private func optionMenu(_ title: String, options: [Option], selection: Binding<String?>) -> some View {
-        let selected = options.first { $0.id == selection.wrappedValue }
-        return Menu {
-            Picker(title, selection: selection) {
-                Text(s.choose).tag(String?.none)
-                ForEach(options) { option in
-                    Text(option.title).tag(Optional(option.id))
-                }
-            }
-            .pickerStyle(.inline)
-        } label: {
-            HStack(spacing: 5) {
-                Text(selected?.short ?? s.choose)
-                    .lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2.weight(.semibold))
-            }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(selected == nil ? Theme.textSecondary : .white)
-        }
-    }
-
     private var selectedMajorTitle: String? {
         majors.first { $0.id == majorSlug }?.title
     }
 
-    private func filterRow<Content: View>(_ title: String, @ViewBuilder picker: () -> Content) -> some View {
-        HStack(spacing: 8) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(Theme.textSecondary)
-                .fixedSize()
-            Spacer(minLength: 4)
+    private func filterRow<Content: View>(_ title: String, value: String?, @ViewBuilder picker: () -> Content) -> some View {
+        FilterRow(title: title, value: value, placeholder: s.choose) {
             picker()
-                .pickerStyle(.menu)
-                .tint(.white)
-                .lineLimit(1)
+                .pickerStyle(.inline)
         }
-        .frame(minHeight: 46)
+    }
+
+    private var contentKey: Int {
+        if items.isEmpty && store.isLoading(kind) { return 0 }
+        if store.errors[kind] != nil && items.isEmpty { return 1 }
+        if items.isEmpty { return 2 }
+        if majorSlug == nil { return 3 }
+        return results.isEmpty ? 4 : 5
     }
 
     @ViewBuilder
@@ -243,6 +223,7 @@ struct ScheduleView: View {
                 .tint(.white)
                 .foregroundStyle(Theme.textSecondary)
                 .padding(.top, 40)
+                .transition(.opacity)
         } else if let error = store.errors[kind], items.isEmpty {
             ContentUnavailableView {
                 Label(s.message(for: error), systemImage: "wifi.exclamationmark")
@@ -263,6 +244,7 @@ struct ScheduleView: View {
                 .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 12)
+                .transition(.opacity)
         } else if results.isEmpty {
             ContentUnavailableView(s.noSchedules, systemImage: "calendar.badge.exclamationmark", description: Text(s.noSchedulesHint))
         } else {
@@ -301,11 +283,8 @@ struct ScheduleView: View {
                     .foregroundStyle(.white)
             }
             .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(.rect(cornerRadius: Theme.cardRadius))
-            .glassCard(tint: Theme.accent.opacity(0.35))
         }
-        .buttonStyle(.pressable)
+        .buttonStyle(.glassTile(cornerRadius: Theme.cardRadius, tint: Theme.accent.opacity(0.35)))
     }
 
     private func resultRow(_ item: ScheduleItem) -> some View {
@@ -334,11 +313,9 @@ struct ScheduleView: View {
                     .foregroundStyle(Theme.textTertiary)
             }
             .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(.rect(cornerRadius: Theme.rowRadius))
-            .glassCard(cornerRadius: Theme.rowRadius)
         }
-        .buttonStyle(.pressable)
+        .buttonStyle(.glassTile())
+        .contentShape(.contextMenuPreview, .rect(cornerRadius: Theme.rowRadius))
         .contextMenu {
             if isPinned {
                 Button(s.unpin, systemImage: "star.slash") {
@@ -366,5 +343,40 @@ struct ScheduleView: View {
         } else if student?.isMaster == true {
             degree = "master"
         }
+    }
+}
+
+private struct FilterRow<Options: View>: View {
+    let title: String
+    let value: String?
+    let placeholder: String
+    @ViewBuilder var options: Options
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        Menu {
+            options
+        } label: {
+            HStack(spacing: 12) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                    .fixedSize()
+                Spacer(minLength: 8)
+                Text(value ?? placeholder)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(value == nil ? Theme.textSecondary : .white)
+                    .lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Theme.textTertiary)
+                    .frame(width: 12)
+            }
+            .frame(minHeight: 46)
+            .contentShape(.rect)
+        }
+        .opacity(isEnabled ? 1 : 0.4)
+        .animation(.smooth(duration: 0.3), value: isEnabled)
     }
 }

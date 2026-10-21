@@ -80,12 +80,42 @@ struct GlassCard<Content: View>: View {
 struct PressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .opacity(configuration.isPressed ? 0.88 : 1)
-            .animation(.spring(response: 0.3, dampingFraction: 0.78), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(configuration.isPressed ? .smooth(duration: 0.16) : .spring(response: 0.42, dampingFraction: 0.62), value: configuration.isPressed)
     }
 }
 
 extension ButtonStyle where Self == PressableButtonStyle {
     static var pressable: PressableButtonStyle { PressableButtonStyle() }
+}
+
+struct GlassTileButtonStyle: ButtonStyle {
+    var cornerRadius: CGFloat = Theme.rowRadius
+    var tint: Color? = nil
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        configuration.label
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(shape)
+            .background {
+                Color.clear
+                    .glassCard(cornerRadius: cornerRadius, tint: tint)
+                    .overlay {
+                        shape
+                            .fill(.white.opacity(configuration.isPressed ? 0.09 : 0))
+                            .blendMode(.plusLighter)
+                    }
+                    .allowsHitTesting(false)
+            }
+            .scaleEffect(configuration.isPressed ? 0.965 : 1)
+            .animation(configuration.isPressed ? .smooth(duration: 0.16) : .spring(response: 0.45, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == GlassTileButtonStyle {
+    static func glassTile(cornerRadius: CGFloat = Theme.rowRadius, tint: Color? = nil) -> GlassTileButtonStyle {
+        GlassTileButtonStyle(cornerRadius: cornerRadius, tint: tint)
+    }
 }

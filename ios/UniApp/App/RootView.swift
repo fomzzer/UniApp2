@@ -8,6 +8,7 @@ struct RootView: View {
 
     @State private var isLocked = false
     @State private var wasActive = false
+    @State private var shieldVisible = false
 
     var body: some View {
         ZStack {
@@ -19,36 +20,52 @@ struct RootView: View {
                     .transition(.opacity)
             case .signedOut:
                 LoginView()
-                    .transition(.blurReplace)
+                    .transition(.opacity)
             case .signedIn:
                 MainTabView()
-                    .transition(.blurReplace)
+                    .transition(.opacity)
             }
 
-            if session.phase == .signedIn && isLocked {
-                LockView { isLocked = false }
-                    .transition(.blurReplace)
-                    .zIndex(2)
-            } else if session.phase == .signedIn && wasActive && scenePhase != .active {
+            if session.phase == .signedIn && shieldVisible {
                 PrivacyShield()
                     .transition(.opacity)
                     .zIndex(1)
             }
+
+            if session.phase == .signedIn && scenePhase == .background {
+                PrivacyShield()
+                    .zIndex(1.5)
+            }
+
+            if session.phase == .signedIn && isLocked {
+                LockView { isLocked = false }
+                    .transition(.opacity)
+                    .zIndex(2)
+            }
         }
         .animation(.smooth(duration: 0.55), value: session.phase)
-        .animation(isLocked ? nil : .smooth(duration: 0.35), value: isLocked)
-        .animation(scenePhase == .active ? .smooth(duration: 0.3) : nil, value: scenePhase)
+        .animation(.smooth(duration: 0.45), value: isLocked)
         .animation(.smooth(duration: 0.35), value: settings.language)
         .task {
             isLocked = settings.biometricLock
             session.bootstrap()
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
-            if phase == .active {
+            switch phase {
+            case .active:
                 wasActive = true
-            }
-            if phase == .background && settings.biometricLock {
-                isLocked = true
+                withAnimation(.smooth(duration: 0.45)) { shieldVisible = false }
+            case .inactive:
+                if wasActive {
+                    withAnimation(.smooth(duration: 0.3)) { shieldVisible = true }
+                }
+            case .background:
+                shieldVisible = true
+                if settings.biometricLock {
+                    isLocked = true
+                }
+            @unknown default:
+                break
             }
         }
     }

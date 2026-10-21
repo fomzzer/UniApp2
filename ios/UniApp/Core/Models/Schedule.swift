@@ -21,6 +21,11 @@ struct ScheduleItem: Codable, Hashable, Sendable, Identifiable {
     var stream: String?
     var url: URL
     var isPdf: Bool
+
+    var webURL: URL? {
+        guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http", url.host() != nil else { return nil }
+        return url
+    }
 }
 
 struct ScheduleList: Codable, Sendable {

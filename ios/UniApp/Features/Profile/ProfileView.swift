@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct ProfileView: View {
     @Environment(SessionStore.self) private var session
@@ -30,7 +31,7 @@ struct ProfileView: View {
                         } label: {
                             navigationRow(title: s.about, systemImage: "info.circle.fill")
                         }
-                        .buttonStyle(.pressable)
+                        .buttonStyle(.glassTile())
                         Button(role: .destructive) {
                             confirmSignOut = true
                         } label: {
@@ -128,7 +129,7 @@ struct ProfileView: View {
                 VStack(spacing: 0) {
                     Button {
                         guard let email = student.email else { return }
-                        UIPasteboard.general.string = email
+                        UIPasteboard.general.setItems([[UTType.plainText.identifier: email]], options: [.localOnly: true])
                         copiedTrigger += 1
                         showCopied = true
                         Task {
@@ -136,7 +137,7 @@ struct ProfileView: View {
                             showCopied = false
                         }
                     } label: {
-                        InfoRow(title: s.universityEmail, value: student.email, valueColor: Theme.accentSoft)
+                        InfoRow(title: s.universityEmail, value: student.email, valueColor: Theme.accentSoft, singleLine: true)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.pressable)
@@ -226,8 +227,6 @@ struct ProfileView: View {
                 .foregroundStyle(Theme.textTertiary)
         }
         .padding(14)
-        .contentShape(.rect(cornerRadius: Theme.rowRadius))
-        .glassCard(cornerRadius: Theme.rowRadius)
     }
 
     private func courseSemester(_ student: Student) -> String {

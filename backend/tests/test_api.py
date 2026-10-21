@@ -87,3 +87,8 @@ def test_legacy_endpoints(client):
     assert body["status"] == "success"
     assert body["info"]["Поток"] == "8"
     assert client.get("/api/schedules").json()[0]["speciality"] == "M"
+
+
+def test_legacy_login_rejects_malformed_input(client):
+    assert client.post("/api/login", json={"faculty_no": "../etc", "auth_code": "good"}).status_code == 422
+    assert client.post("/api/login", json={"faculty_no": "121221089", "auth_code": "x" * 500}).status_code == 422

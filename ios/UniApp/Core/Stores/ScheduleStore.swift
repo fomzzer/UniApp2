@@ -75,7 +75,10 @@ final class ScheduleStore {
         if !forceReload, FileManager.default.fileExists(atPath: destination.path(percentEncoded: false)) {
             return destination
         }
-        try await api.download(item.url, to: destination)
+        guard let remote = item.webURL, remote.scheme?.lowercased() == "https" else {
+            throw APIError.transport("Unsupported document address")
+        }
+        try await api.download(remote, to: destination)
         return destination
     }
 

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import errors
 from .config import settings
@@ -105,8 +105,8 @@ def schedule_list(kind: ScheduleKind = "lectures") -> ScheduleList:
 
 
 class LegacyLogin(BaseModel):
-    faculty_no: str
-    auth_code: str
+    faculty_no: str = Field(min_length=3, max_length=16, pattern=r"^\d+$")
+    auth_code: str = Field(min_length=1, max_length=128)
 
 
 @app.post("/api/login", include_in_schema=False)

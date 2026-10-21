@@ -20,8 +20,10 @@ enum DiskCache {
     }
 
     static func documentURL(for item: ScheduleItem) -> URL {
-        let name = item.url.lastPathComponent.isEmpty ? "\(item.id).pdf" : item.url.lastPathComponent
-        return cachesDirectory.appending(path: "documents", directoryHint: .isDirectory).appending(path: name)
+        let allowed = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
+        let cleaned = String(item.url.lastPathComponent.filter { allowed.contains($0) }.prefix(80))
+        let suffix = cleaned.trimmingCharacters(in: CharacterSet(charactersIn: ".")).isEmpty ? "document.pdf" : cleaned
+        return cachesDirectory.appending(path: "documents", directoryHint: .isDirectory).appending(path: "\(item.id)-\(suffix)")
     }
 
     private static func write<T: Encodable>(_ value: T, to url: URL, protected: Bool) {

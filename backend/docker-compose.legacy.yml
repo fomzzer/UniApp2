@@ -1,4 +1,4 @@
 services:
-  api:
+  caddy:
     ports:
       - "8000:8000"

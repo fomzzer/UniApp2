@@ -185,8 +185,6 @@ struct HomeView: View {
                             .foregroundStyle(Theme.textSecondary)
                     }
                 }
-                .animation(.smooth(duration: 0.35), value: item)
-                .animation(.smooth(duration: 0.35), value: schedules.isLoading(.lectures))
                 Spacer(minLength: 8)
                 Button(item == nil ? s.choose : s.open) {
                     if let item {

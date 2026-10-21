@@ -26,7 +26,7 @@ struct ScheduleDocumentView: View {
                     } description: {
                         Text(item.url.host() ?? item.url.absoluteString)
                     } actions: {
-                        Button(s.openInSafari) { openURL(item.url) }
+                        Button(s.openInSafari) { if let url = item.webURL { openURL(url) } }
                             .buttonStyle(.glassProminent)
                             .tint(Theme.accent)
                     }
@@ -45,7 +45,7 @@ struct ScheduleDocumentView: View {
                         }
                         .buttonStyle(.glassProminent)
                         .tint(Theme.accent)
-                        Button(s.openInSafari) { openURL(item.url) }
+                        Button(s.openInSafari) { if let url = item.webURL { openURL(url) } }
                             .buttonStyle(.glass)
                     }
                 } else {
