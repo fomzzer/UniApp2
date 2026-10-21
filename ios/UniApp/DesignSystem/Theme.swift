@@ -41,15 +41,14 @@ enum Theme {
 }
 
 extension View {
-    func glassCard(cornerRadius: CGFloat = Theme.cardRadius, tint: Color? = nil, interactive: Bool = false) -> some View {
-        modifier(GlassCardModifier(cornerRadius: cornerRadius, tint: tint, interactive: interactive))
+    func glassCard(cornerRadius: CGFloat = Theme.cardRadius, tint: Color? = nil) -> some View {
+        modifier(GlassCardModifier(cornerRadius: cornerRadius, tint: tint))
     }
 }
 
 struct GlassCardModifier: ViewModifier {
     var cornerRadius: CGFloat
     var tint: Color?
-    var interactive: Bool
 
     func body(content: Content) -> some View {
         content.glassEffect(glass, in: .rect(cornerRadius: cornerRadius))
@@ -59,9 +58,6 @@ struct GlassCardModifier: ViewModifier {
         var glass = Glass.regular
         if let tint {
             glass = glass.tint(tint)
-        }
-        if interactive {
-            glass = glass.interactive()
         }
         return glass
     }
@@ -79,4 +75,17 @@ struct GlassCard<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .glassCard(cornerRadius: cornerRadius, tint: tint)
     }
+}
+
+struct PressableButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressableButtonStyle {
+    static var pressable: PressableButtonStyle { PressableButtonStyle() }
 }

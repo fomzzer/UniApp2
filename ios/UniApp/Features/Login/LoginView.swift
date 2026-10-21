@@ -21,6 +21,8 @@ struct LoginView: View {
     @State private var successTrigger = 0
     @FocusState private var focus: Field?
 
+    private static let facultyNoLimit = 10
+
     private enum Field {
         case facultyNo
         case secret
@@ -29,28 +31,36 @@ struct LoginView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             AppBackground()
-            ScrollView {
-                VStack(spacing: 28) {
-                    header
-                    form
-                    if let errorText {
-                        Label(errorText, systemImage: "exclamationmark.triangle.fill")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Theme.danger)
-                            .multilineTextAlignment(.center)
-                            .transition(.move(edge: .top).combined(with: .opacity))
+                .onTapGesture { focus = nil }
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: 28) {
+                        header
+                        form
+                        if let errorText {
+                            Label(errorText, systemImage: "exclamationmark.triangle.fill")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Theme.danger)
+                                .multilineTextAlignment(.center)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                        submitButton
+                        footer
                     }
-                    submitButton
-                    footer
+                    .padding(.horizontal, 24)
+                    .padding(.top, isReauthentication ? 40 : 72)
+                    .padding(.bottom, 40)
+                    .frame(maxWidth: 520)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .top)
+                    .background {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture { focus = nil }
+                    }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, isReauthentication ? 40 : 72)
-                .padding(.bottom, 40)
-                .frame(maxWidth: 520)
-                .frame(maxWidth: .infinity)
+                .scrollDismissesKeyboard(.interactively)
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .scrollDismissesKeyboard(.interactively)
-            .scrollBounceBehavior(.basedOnSize)
 
             languageMenu
                 .padding(.trailing, 20)
@@ -63,7 +73,6 @@ struct LoginView: View {
             if facultyNo.isEmpty {
                 facultyNo = prefilledFacultyNo ?? session.lastKnownFacultyNo ?? ""
             }
-            focus = facultyNo.isEmpty ? .facultyNo : .secret
         }
         .task(id: facultyNo) {
             await detectMethod()
@@ -105,7 +114,7 @@ struct LoginView: View {
                         .textContentType(.username)
                         .focused($focus, equals: .facultyNo)
                         .onChange(of: facultyNo) { _, value in
-                            let digits = value.filter(\.isNumber)
+                            let digits = String(value.filter(\.isNumber).prefix(Self.facultyNoLimit))
                             if digits != value { facultyNo = digits }
                         }
                     if isDetecting {
@@ -176,7 +185,7 @@ struct LoginView: View {
         .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .frame(height: 54)
-        .glassEffect(.regular.tint(.white.opacity(0.04)).interactive(), in: .rect(cornerRadius: 18))
+        .glassEffect(.regular.tint(.white.opacity(0.04)), in: .rect(cornerRadius: 18))
     }
 
     private var secretIcon: String {
@@ -236,7 +245,7 @@ struct LoginView: View {
             Text(settings.language.flag)
                 .font(.title3)
                 .frame(width: 44, height: 44)
-                .glassEffect(.regular.interactive(), in: .circle)
+                .glassEffect(.regular, in: .circle)
         }
     }
 

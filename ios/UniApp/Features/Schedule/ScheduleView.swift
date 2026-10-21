@@ -17,6 +17,11 @@ struct ScheduleView: View {
     private struct Option: Hashable, Identifiable {
         let id: String
         let title: String
+
+        var short: String {
+            let acronym = ScheduleMatcher.acronym(title)
+            return acronym.count >= 2 && acronym.count < title.count ? acronym : title
+        }
     }
 
     var body: some View {
@@ -149,21 +154,11 @@ struct ScheduleView: View {
                 }
                 Divider().overlay(Theme.separator)
                 filterRow(s.faculty) {
-                    Picker(s.faculty, selection: facultyBinding) {
-                        Text(s.choose).tag(String?.none)
-                        ForEach(faculties) { option in
-                            Text(option.title).tag(Optional(option.id))
-                        }
-                    }
+                    optionMenu(s.faculty, options: faculties, selection: facultyBinding)
                 }
                 Divider().overlay(Theme.separator)
                 filterRow(s.major) {
-                    Picker(s.major, selection: majorBinding) {
-                        Text(s.choose).tag(String?.none)
-                        ForEach(majors) { option in
-                            Text(option.title).tag(Optional(option.id))
-                        }
-                    }
+                    optionMenu(s.major, options: majors, selection: majorBinding)
                 }
                 .disabled(facultySlug == nil)
                 Divider().overlay(Theme.separator)
@@ -189,6 +184,32 @@ struct ScheduleView: View {
                 .disabled(majorSlug == nil)
             }
         }
+    }
+
+    private func optionMenu(_ title: String, options: [Option], selection: Binding<String?>) -> some View {
+        let selected = options.first { $0.id == selection.wrappedValue }
+        return Menu {
+            Picker(title, selection: selection) {
+                Text(s.choose).tag(String?.none)
+                ForEach(options) { option in
+                    Text(option.title).tag(Optional(option.id))
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            HStack(spacing: 5) {
+                Text(selected?.short ?? s.choose)
+                    .lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(selected == nil ? Theme.textSecondary : .white)
+        }
+    }
+
+    private var selectedMajorTitle: String? {
+        majors.first { $0.id == majorSlug }?.title
     }
 
     private func filterRow<Content: View>(_ title: String, @ViewBuilder picker: () -> Content) -> some View {
@@ -237,7 +258,7 @@ struct ScheduleView: View {
             ContentUnavailableView(s.noSchedules, systemImage: "calendar.badge.exclamationmark", description: Text(s.noSchedulesHint))
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: s.results)
+                SectionHeader(title: selectedMajorTitle ?? s.results)
                 ForEach(results) { item in
                     resultRow(item)
                 }
@@ -271,9 +292,9 @@ struct ScheduleView: View {
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard(tint: Theme.accent.opacity(0.35), interactive: true)
+            .glassCard(tint: Theme.accent.opacity(0.35))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private func resultRow(_ item: ScheduleItem) -> some View {
@@ -303,9 +324,9 @@ struct ScheduleView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassCard(cornerRadius: Theme.rowRadius, interactive: true)
+            .glassCard(cornerRadius: Theme.rowRadius)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .contextMenu {
             if isPinned {
                 Button(s.unpin, systemImage: "star.slash") {

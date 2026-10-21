@@ -29,7 +29,7 @@ struct ProfileView: View {
                         } label: {
                             navigationRow(title: s.about, systemImage: "info.circle.fill")
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                         Button(role: .destructive) {
                             confirmSignOut = true
                         } label: {
@@ -131,7 +131,7 @@ struct ProfileView: View {
                         InfoRow(title: s.universityEmail, value: student.email, valueColor: Theme.accentSoft)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     Divider().overlay(Theme.separator)
                     InfoRow(
                         title: s.dormitory,
@@ -147,9 +147,12 @@ struct ProfileView: View {
         GlassCard(padding: 16) {
             DisclosureGroup {
                 VStack(spacing: 0) {
-                    ForEach(details.keys.sorted(), id: \.self) { key in
+                    let keys = details.keys.sorted()
+                    ForEach(Array(keys.enumerated()), id: \.element) { index, key in
                         InfoRow(title: key, value: details[key])
-                        Divider().overlay(Theme.separator)
+                        if index < keys.count - 1 {
+                            Divider().overlay(Theme.separator)
+                        }
                     }
                 }
                 .padding(.top, 8)
@@ -211,7 +214,7 @@ struct ProfileView: View {
                 .foregroundStyle(Theme.textTertiary)
         }
         .padding(14)
-        .glassCard(cornerRadius: Theme.rowRadius, interactive: true)
+        .glassCard(cornerRadius: Theme.rowRadius)
     }
 
     private func courseSemester(_ student: Student) -> String {
@@ -263,7 +266,7 @@ struct AboutView: View {
                             InfoRow(title: s.sourceCode, value: "github.com/fomzzer", valueColor: Theme.accentSoft)
                                 .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                         Divider().overlay(Theme.separator)
                         InfoRow(title: s.dataSources, value: "e-university.tu-sofia.bg\ntu-sofia.bg")
                     }

@@ -64,7 +64,7 @@ struct HomeView: View {
             } label: {
                 AvatarView(initials: student.initials, size: 48)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             VStack(alignment: .leading, spacing: 2) {
                 Text(s.greeting(student.firstName))
                     .font(.title2.weight(.bold))
@@ -89,9 +89,9 @@ struct HomeView: View {
                     }
                 }
                 .frame(width: 44, height: 44)
-                .glassEffect(.regular.interactive(), in: .circle)
+                .glassEffect(.regular, in: .circle)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .disabled(session.isRefreshing)
             .accessibilityLabel(s.refresh)
         }
@@ -118,7 +118,7 @@ struct HomeView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Theme.textSecondary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .padding(14)
         .glassCard(cornerRadius: Theme.rowRadius, tint: Theme.gradeFair.opacity(0.18))
@@ -235,7 +235,7 @@ struct QuickActionButton: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
                     .frame(width: 58, height: 58)
-                    .glassEffect(.regular.tint(Theme.accent.opacity(0.35)).interactive(), in: .circle)
+                    .glassEffect(.regular.tint(Theme.accent.opacity(0.35)), in: .circle)
                 Text(title)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Theme.textSecondary)
@@ -243,7 +243,7 @@ struct QuickActionButton: View {
                     .minimumScaleFactor(0.8)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

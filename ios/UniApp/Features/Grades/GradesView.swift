@@ -133,9 +133,9 @@ struct GradesView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .glassEffect(isSelected ? Glass.regular.tint(Theme.accent.opacity(0.8)).interactive() : Glass.regular.interactive(), in: .capsule)
+                .glassEffect(isSelected ? Glass.regular.tint(Theme.accent.opacity(0.8)) : Glass.regular, in: .capsule)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .sensoryFeedback(.selection, trigger: isSelected)
     }
 
@@ -167,7 +167,7 @@ struct GradesView: View {
                                 .padding(.horizontal, 12)
                                 .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                         if index < semester.subjects.count - 1 {
                             Divider().overlay(Theme.separator).padding(.leading, 14)
                         }

@@ -52,7 +52,7 @@ def parse_info(soup: BeautifulSoup) -> dict[str, str]:
             key_parts = list(cells[index].stripped_strings)
             value_parts = list(cells[index + 1].stripped_strings)
             key = clean(key_parts[0]).replace('"', "").rstrip(":").strip() if key_parts else ""
-            value = clean(" ".join(value_parts)).replace('"', "") if value_parts else ""
+            value = clean(value_parts[0]).replace('"', "") if value_parts else ""
             if key:
                 info[key] = value
     return info
@@ -73,6 +73,16 @@ def _int_from(text: str | None) -> int | None:
     return int(match.group()) if match else None
 
 
+EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+
+
+def _email(text: str | None) -> str | None:
+    if not text:
+        return None
+    match = EMAIL_PATTERN.search(text)
+    return match.group() if match else None
+
+
 def build_student(name: str, faculty_no: str, info: dict[str, str]) -> Student:
     semester = _int_from(_pick(info, "семест"))
     course = (semester + 1) // 2 if semester else None
@@ -87,7 +97,7 @@ def build_student(name: str, faculty_no: str, info: dict[str, str]) -> Student:
         course=course,
         group=_pick(info, "група"),
         stream=_pick(info, "поток"),
-        email=_pick(info, "имейл", "e-mail", "email"),
+        email=_email(_pick(info, "имейл", "e-mail", "email")),
         details=info,
     )
 

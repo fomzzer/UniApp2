@@ -9,7 +9,7 @@ HOME_PAGE = """
 <tr><td>Фак. номер:</td><td>121221089</td><td>Факултет:</td><td>Факултет Компютърни системи и технологии</td></tr>
 <tr><td>Специалност:</td><td>Компютърно и софтуерно инженерство</td><td>Записан семестър:</td><td>3</td></tr>
 <tr><td>Група:</td><td>42</td><td>Поток:</td><td>8</td></tr>
-<tr><td>Имейл в ТУ - София:</td><td>ivan@tu-sofia.bg</td><td>Вид обучение:</td><td>редовно</td></tr>
+<tr><td>Имейл в ТУ - София:</td><td>ivan@tu-sofia.bg<br><font size=1>Първоначалната парола за достъп е вашият ЕГН</font></td><td>Вид обучение:</td><td>редовно</td></tr>
 </table>
 <form name=nav action="index.php"><input type=hidden name=sid value=abc></form>
 </body></html>
@@ -45,6 +45,7 @@ def test_student_profile_is_normalized():
     assert student.group == "42"
     assert student.stream == "8"
     assert student.email == "ivan@tu-sofia.bg"
+    assert student.details["Имейл в ТУ - София"] == "ivan@tu-sofia.bg"
     assert student.education_form == "редовно"
 
 
