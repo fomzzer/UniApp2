@@ -151,7 +151,7 @@ struct ProfileView: View {
                     Divider().overlay(Theme.separator)
                     contactRow(
                         systemImage: "bed.double.fill",
-                        tint: dormitory.accommodated ? Theme.success : Theme.gradeGood,
+                        tint: Theme.accent,
                         title: s.dormitory
                     ) {
                         Text(dormitory.status == nil ? s.noData : (dormitory.accommodated ? s.accommodated : s.notAccommodated))
