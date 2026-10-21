@@ -180,9 +180,8 @@ struct GradesView: View {
                         } label: {
                             SubjectRow(subject: subject)
                                 .padding(.horizontal, 12)
-                                .contentShape(.rect)
                         }
-                        .buttonStyle(.pressable)
+                        .buttonStyle(.row())
                         if index < semester.subjects.count - 1 {
                             Divider().overlay(Theme.separator).padding(.leading, 14)
                         }

@@ -145,9 +145,8 @@ struct ProfileView: View {
                             Text(student.email ?? "—")
                                 .foregroundStyle(Theme.accentSoft)
                         }
-                        .contentShape(Rectangle())
                     }
-                    .buttonStyle(.pressable)
+                    .buttonStyle(.row(inset: 10))
                     .disabled(student.email == nil)
                     Divider().overlay(Theme.separator)
                     contactRow(
@@ -318,9 +317,8 @@ struct AboutView: View {
                             if let url = URL(string: "https://github.com/fomzzer") { openURL(url) }
                         } label: {
                             InfoRow(title: s.sourceCode, value: "github.com/fomzzer", valueColor: Theme.accentSoft)
-                                .contentShape(Rectangle())
                         }
-                        .buttonStyle(.pressable)
+                        .buttonStyle(.row(inset: 10))
                         Divider().overlay(Theme.separator)
                         InfoRow(title: s.dataSources, value: "e-university.tu-sofia.bg\ntu-sofia.bg")
                     }

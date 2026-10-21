@@ -114,6 +114,31 @@ struct GlassTileButtonStyle: ButtonStyle {
             }
             .scaleEffect(configuration.isPressed ? 0.965 : 1)
             .animation(configuration.isPressed ? .smooth(duration: 0.16) : .spring(response: 0.45, dampingFraction: 0.6), value: configuration.isPressed)
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.6), trigger: configuration.isPressed) { _, pressed in pressed }
+    }
+}
+
+struct RowButtonStyle: ButtonStyle {
+    var inset: CGFloat = 0
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(.rect)
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.white.opacity(configuration.isPressed ? 0.08 : 0))
+                    .padding(.horizontal, -inset)
+                    .allowsHitTesting(false)
+            }
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(configuration.isPressed ? .smooth(duration: 0.14) : .smooth(duration: 0.45), value: configuration.isPressed)
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.5), trigger: configuration.isPressed) { _, pressed in pressed }
+    }
+}
+
+extension ButtonStyle where Self == RowButtonStyle {
+    static func row(inset: CGFloat = 0) -> RowButtonStyle {
+        RowButtonStyle(inset: inset)
     }
 }
 
