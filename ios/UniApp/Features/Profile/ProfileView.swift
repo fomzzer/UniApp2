@@ -142,7 +142,8 @@ struct ProfileView: View {
                             tint: showCopied ? Theme.success : Theme.accent,
                             title: s.universityEmail
                         ) {
-                            emailText(student.email)
+                            Text(student.email ?? "—")
+                                .foregroundStyle(Theme.accentSoft)
                         }
                         .contentShape(Rectangle())
                     }
@@ -177,15 +178,6 @@ struct ProfileView: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 10)
-    }
-
-    private func emailText(_ email: String?) -> Text {
-        guard let email, let at = email.firstIndex(of: "@") else {
-            return Text(email ?? "—").foregroundStyle(.white)
-        }
-        let name = Text(email[..<at]).foregroundStyle(.white)
-        let domain = Text(email[at...]).foregroundStyle(Theme.textSecondary)
-        return Text("\(name)\(domain)")
     }
 
     private func detailsCard(_ details: [String: String]) -> some View {
