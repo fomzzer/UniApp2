@@ -13,6 +13,7 @@ struct ScheduleView: View {
     @State private var stream: String?
     @State private var opened: ScheduleItem?
     @State private var appliedKind: ScheduleKind?
+    @State private var wanted: Target?
     @State private var mineMissing = false
 
     private struct Option: Hashable, Identifiable {
@@ -58,7 +59,10 @@ struct ScheduleView: View {
             }
             .background { AppBackground(glow: 0.75) }
             .navigationTitle(s.tabSchedule)
-            .refreshable { await store.load(kind, force: true) }
+            .refreshable {
+                await store.load(kind, force: true)
+                applySelection()
+            }
             .task(id: kind) {
                 applySelection()
                 await store.load(kind)
@@ -184,7 +188,7 @@ struct ScheduleView: View {
                 }
                 .disabled(facultySlug == nil)
                 Divider().overlay(Theme.separator)
-                filterRow(s.year, value: year.map(String.init)) {
+                filterRow(s.year, value: year.flatMap { years.contains($0) ? String($0) : nil }) {
                     Picker(s.year, selection: yearBinding.animation(.smooth(duration: 0.35))) {
                         Text(s.choose).tag(Int?.none)
                         ForEach(years, id: \.self) { value in
@@ -194,7 +198,7 @@ struct ScheduleView: View {
                 }
                 .disabled(majorSlug == nil || years.isEmpty)
                 Divider().overlay(Theme.separator)
-                filterRow(s.stream, value: stream) {
+                filterRow(s.stream, value: stream.flatMap { streams.contains($0) ? $0 : nil }) {
                     Picker(s.stream, selection: $stream.animation(.smooth(duration: 0.35))) {
                         Text(s.choose).tag(String?.none)
                         ForEach(streams, id: \.self) { value in
@@ -340,14 +344,25 @@ struct ScheduleView: View {
     }
 
     private func applySelection() {
-        guard appliedKind != kind, !items.isEmpty else { return }
-        appliedKind = kind
-        let student = session.snapshot?.student
-        let target = majorSlug != nil
-            ? Target(degree: degree, facultySlug: facultySlug, majorSlug: majorSlug, year: year, stream: stream)
-            : defaultTarget(student)
+        guard appliedKind != kind else { return }
+        if majorSlug != nil {
+            wanted = Target(degree: degree, facultySlug: facultySlug, majorSlug: majorSlug, year: year, stream: stream)
+        }
         var transaction = Transaction()
         transaction.disablesAnimations = true
+        guard !items.isEmpty else {
+            withTransaction(transaction) {
+                facultySlug = nil
+                majorSlug = nil
+                year = nil
+                stream = nil
+                mineMissing = false
+            }
+            return
+        }
+        appliedKind = kind
+        let student = session.snapshot?.student
+        let target = wanted ?? defaultTarget(student)
         withTransaction(transaction) { resolve(target, student: student) }
     }
 
