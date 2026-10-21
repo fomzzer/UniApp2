@@ -1,0 +1,77 @@
+name: iOS capture
+
+# Records the simulator while a UI test switches tabs, and uploads the video
+# plus per-frame PNGs for checking transitions frame by frame.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Generate project
+        run: |
+          brew install xcodegen xcbeautify ffmpeg
+          xcodegen generate
+
+      - name: Boot simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS-26' in k for x in v if x['name'].startswith('iPhone')))")
+          echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project UniApp.xcodeproj \
+            -scheme UniAppCapture \
+            -destination "id=$DEVICE_ID" \
+            -derivedDataPath build/capture \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify --renderer github-actions
+
+      - name: Record tab switching
+        run: |
+          set -o pipefail
+          mkdir -p capture
+          xcrun simctl io "$DEVICE_ID" recordVideo --codec h264 --force capture/tabs.mov &
+          RECORDER=$!
+          sleep 2
+          xcodebuild test-without-building \
+            -project UniApp.xcodeproj \
+            -scheme UniAppCapture \
+            -destination "id=$DEVICE_ID" \
+            -derivedDataPath build/capture | xcbeautify --renderer github-actions || STATUS=$?
+          kill -INT $RECORDER
+          wait $RECORDER || true
+          exit ${STATUS:-0}
+
+      - name: Extract frames
+        run: |
+          mkdir -p capture/frames
+          ffmpeg -loglevel error -i capture/tabs.mov -vf "fps=60,scale=240:-2" capture/frames/%05d.png
+          ls capture/frames | wc -l
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: tab-capture-${{ github.run_number }}
+          path: ios/capture
+          retention-days: 7

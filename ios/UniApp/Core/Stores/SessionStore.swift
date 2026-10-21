@@ -32,6 +32,15 @@ final class SessionStore {
 
     func bootstrap() {
         guard phase == .launching else { return }
+        #if DEBUG
+        // UI tests start signed in with a fixture snapshot instead of a real account.
+        if let json = ProcessInfo.processInfo.environment["UNIAPP_UITEST_SNAPSHOT"],
+           let seeded = try? APIClient.decoder.decode(Snapshot.self, from: Data(json.utf8)) {
+            snapshot = seeded
+            phase = .signedIn
+            return
+        }
+        #endif
         savedCredentials = KeychainStore.load()
         if let cached = DiskCache.loadSnapshot() {
             snapshot = cached

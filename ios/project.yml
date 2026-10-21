@@ -60,6 +60,19 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.fomzzer.uniapp.tests
+  UniAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UniAppUITests
+      - path: UniAppTests/Fixtures.swift
+    dependencies:
+      - target: UniApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.fomzzer.uniapp.uitests
+        TEST_TARGET_NAME: UniApp
 schemes:
   UniApp:
     build:
@@ -68,3 +81,10 @@ schemes:
     test:
       targets:
         - UniAppTests
+  UniAppCapture:
+    build:
+      targets:
+        UniApp: all
+    test:
+      targets:
+        - UniAppUITests
