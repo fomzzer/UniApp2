@@ -135,7 +135,6 @@ struct Strings: Sendable {
     var major: String { t("Специалност", "Специальность") }
     var year: String { t("Курс", "Курс") }
     var stream: String { t("Поток", "Поток") }
-    var any: String { t("Всички", "Все") }
     var filters: String { t("Филтри", "Фильтры") }
     var results: String { t("Програми", "Расписания") }
     var noSchedules: String { t("Няма публикувани програми", "Расписания не опубликованы") }
@@ -149,6 +148,7 @@ struct Strings: Sendable {
     var openInSafari: String { t("Отвори в Safari", "Открыть в Safari") }
     var close: String { t("Затвори", "Закрыть") }
     var documentFailed: String { t("Неуспешно изтегляне на файла", "Не удалось скачать файл") }
+    var mineNotPublished: String { t("Програмата за твоята специалност още не е публикувана.", "Расписание для твоей специальности ещё не опубликовано.") }
     var selectMajorHint: String { t("Избери факултет и специалност, за да видиш програмите.", "Выбери факультет и специальность, чтобы увидеть расписания.") }
 
     var studies: String { t("Обучение", "Учёба") }

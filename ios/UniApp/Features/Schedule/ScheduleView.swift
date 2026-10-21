@@ -12,7 +12,8 @@ struct ScheduleView: View {
     @State private var year: Int?
     @State private var stream: String?
     @State private var opened: ScheduleItem?
-    @State private var didPrefill = false
+    @State private var appliedKind: ScheduleKind?
+    @State private var mineMissing = false
 
     private struct Option: Hashable, Identifiable {
         let id: String
@@ -22,6 +23,14 @@ struct ScheduleView: View {
             let acronym = ScheduleMatcher.acronym(title)
             return acronym.count >= 2 && acronym.count < title.count ? acronym : title
         }
+    }
+
+    private struct Target {
+        var degree: String?
+        var facultySlug: String?
+        var majorSlug: String?
+        var year: Int?
+        var stream: String?
     }
 
     var body: some View {
@@ -51,10 +60,9 @@ struct ScheduleView: View {
             .navigationTitle(s.tabSchedule)
             .refreshable { await store.load(kind, force: true) }
             .task(id: kind) {
+                applySelection()
                 await store.load(kind)
-                var transaction = Transaction()
-                transaction.disablesAnimations = true
-                withTransaction(transaction) { prefillIfNeeded() }
+                applySelection()
             }
             .sheet(item: $opened) { item in
                 ScheduleDocumentView(item: item)
@@ -113,6 +121,7 @@ struct ScheduleView: View {
     private var degreeBinding: Binding<String> {
         Binding(get: { degree }, set: { value in
             degree = value
+            mineMissing = false
             facultySlug = nil
             majorSlug = nil
             year = nil
@@ -123,6 +132,7 @@ struct ScheduleView: View {
     private var facultyBinding: Binding<String?> {
         Binding(get: { facultySlug }, set: { value in
             facultySlug = value
+            mineMissing = false
             majorSlug = nil
             year = nil
             stream = nil
@@ -174,25 +184,25 @@ struct ScheduleView: View {
                 }
                 .disabled(facultySlug == nil)
                 Divider().overlay(Theme.separator)
-                filterRow(s.year, value: year.map(String.init) ?? s.any) {
+                filterRow(s.year, value: year.map(String.init)) {
                     Picker(s.year, selection: yearBinding.animation(.smooth(duration: 0.35))) {
-                        Text(s.any).tag(Int?.none)
+                        Text(s.choose).tag(Int?.none)
                         ForEach(years, id: \.self) { value in
                             Text("\(value)").tag(Optional(value))
                         }
                     }
                 }
-                .disabled(majorSlug == nil)
+                .disabled(majorSlug == nil || years.isEmpty)
                 Divider().overlay(Theme.separator)
-                filterRow(s.stream, value: stream ?? s.any) {
+                filterRow(s.stream, value: stream) {
                     Picker(s.stream, selection: $stream.animation(.smooth(duration: 0.35))) {
-                        Text(s.any).tag(String?.none)
+                        Text(s.choose).tag(String?.none)
                         ForEach(streams, id: \.self) { value in
                             Text(value).tag(Optional(value))
                         }
                     }
                 }
-                .disabled(majorSlug == nil)
+                .disabled(majorSlug == nil || streams.isEmpty)
             }
         }
     }
@@ -239,7 +249,7 @@ struct ScheduleView: View {
         } else if items.isEmpty {
             ContentUnavailableView(s.noSchedules, systemImage: "calendar.badge.exclamationmark", description: Text(s.noSchedulesHint))
         } else if majorSlug == nil {
-            Text(s.selectMajorHint)
+            Text(mineMissing ? s.mineNotPublished : s.selectMajorHint)
                 .font(.subheadline)
                 .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
@@ -329,20 +339,41 @@ struct ScheduleView: View {
         }
     }
 
-    private func prefillIfNeeded() {
-        guard !didPrefill, !items.isEmpty else { return }
-        didPrefill = true
+    private func applySelection() {
+        guard appliedKind != kind, !items.isEmpty else { return }
+        appliedKind = kind
         let student = session.snapshot?.student
-        let source = store.myItem(kind, student: student)
-        if let source {
-            degree = source.degree
-            facultySlug = source.facultySlug
-            majorSlug = source.majorSlug
-            year = source.year
-            stream = nil
-        } else if student?.isMaster == true {
-            degree = "master"
+        let target = majorSlug != nil
+            ? Target(degree: degree, facultySlug: facultySlug, majorSlug: majorSlug, year: year, stream: stream)
+            : defaultTarget(student)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { resolve(target, student: student) }
+    }
+
+    private func defaultTarget(_ student: Student?) -> Target {
+        let order = [kind] + ScheduleKind.allCases.filter { $0 != kind }
+        guard let mine = order.lazy.compactMap({ store.myItem($0, student: student) }).first else {
+            return Target(degree: student?.isMaster == true ? "master" : nil, year: student?.course, stream: student?.stream)
         }
+        if let pinned = store.pinned, pinned.matches(mine) {
+            return Target(degree: mine.degree, facultySlug: mine.facultySlug, majorSlug: mine.majorSlug, year: pinned.year ?? student?.course, stream: pinned.stream ?? student?.stream)
+        }
+        return Target(degree: mine.degree, facultySlug: mine.facultySlug, majorSlug: mine.majorSlug, year: mine.year ?? student?.course, stream: mine.stream ?? student?.stream)
+    }
+
+    private func resolve(_ target: Target, student: Student?) {
+        let available = degrees
+        let fallbackDegree = student?.isMaster == true && available.contains("master") ? "master" : available.contains("bachelor") ? "bachelor" : available.first ?? "bachelor"
+        degree = target.degree.flatMap { available.contains($0) ? $0 : nil } ?? fallbackDegree
+        facultySlug = faculties.first { $0.id == target.facultySlug }?.id
+            ?? faculties.first { ScheduleMatcher.similar(student?.faculty, $0.title) }?.id
+        majorSlug = majors.first { $0.id == target.majorSlug }?.id
+            ?? majors.first { ScheduleMatcher.similar(student?.specialty, $0.title) }?.id
+        year = target.year.flatMap { years.contains($0) ? $0 : nil }
+        let key = ScheduleMatcher.streamKey(target.stream)
+        stream = streams.first { $0 == target.stream } ?? (key == nil ? nil : streams.first { ScheduleMatcher.streamKey($0) == key })
+        mineMissing = majorSlug == nil && (target.majorSlug != nil || student?.specialty?.isEmpty == false)
     }
 }
 
