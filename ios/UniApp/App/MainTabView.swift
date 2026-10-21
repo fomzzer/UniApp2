@@ -15,19 +15,19 @@ struct MainTabView: View {
         TabView(selection: $selection) {
             Tab(s.tabHome, systemImage: "house.fill", value: AppTab.home) {
                 HomeView(selection: $selection)
-                    .tabReveal(selection, glow: 1)
+                    .tabReveal(.home, selection: selection, glow: 1)
             }
             Tab(s.tabGrades, systemImage: "graduationcap.fill", value: AppTab.grades) {
                 GradesView()
-                    .tabReveal(selection, glow: 0.75)
+                    .tabReveal(.grades, selection: selection, glow: 0.75)
             }
             Tab(s.tabSchedule, systemImage: "calendar", value: AppTab.schedule) {
                 ScheduleView()
-                    .tabReveal(selection, glow: 0.75)
+                    .tabReveal(.schedule, selection: selection, glow: 0.75)
             }
             Tab(s.tabProfile, systemImage: "person.crop.circle.fill", value: AppTab.profile) {
                 ProfileView()
-                    .tabReveal(selection, glow: 0.75)
+                    .tabReveal(.profile, selection: selection, glow: 0.75)
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
@@ -36,18 +36,33 @@ struct MainTabView: View {
 }
 
 private extension View {
-    // Only the content fades in: a matching backdrop stays opaque underneath,
-    // so nothing darker or brighter shows through mid-reveal.
-    func tabReveal(_ selection: AppTab, glow: Double) -> some View {
-        keyframeAnimator(initialValue: 1.0, trigger: selection) { content, value in
-            content
-                .opacity(value)
-                .background { AppBackground(glow: glow) }
-        } keyframes: { _ in
-            KeyframeTrack {
-                MoveKeyframe(0.5)
-                LinearKeyframe(1.0, duration: 0.45, timingCurve: .easeOut)
+    func tabReveal(_ tab: AppTab, selection: AppTab, glow: Double) -> some View {
+        modifier(TabReveal(isSelected: selection == tab, glow: glow))
+    }
+}
+
+// Fades in only the tab being opened. The outgoing tab stays untouched while the
+// switch completes, and a matching opaque backdrop keeps the page from flashing.
+private struct TabReveal: ViewModifier {
+    let isSelected: Bool
+    let glow: Double
+
+    @State private var reveals = 0
+
+    func body(content: Content) -> some View {
+        content
+            .keyframeAnimator(initialValue: 1.0, trigger: reveals) { content, value in
+                content
+                    .opacity(value)
+                    .background { AppBackground(glow: glow) }
+            } keyframes: { _ in
+                KeyframeTrack {
+                    MoveKeyframe(0.5)
+                    LinearKeyframe(1.0, duration: 0.45, timingCurve: .easeOut)
+                }
             }
-        }
+            .onChange(of: isSelected) { _, selected in
+                if selected { reveals += 1 }
+            }
     }
 }
