@@ -9,9 +9,6 @@ if [ ! -f .env ]; then
 fi
 
 compose_files=(-f docker-compose.yml)
-if [ "${LEGACY_PORT:-1}" = "1" ]; then
-  compose_files+=(-f docker-compose.legacy.yml)
-fi
 
 git pull --ff-only || true
 sudo docker compose "${compose_files[@]}" build --pull

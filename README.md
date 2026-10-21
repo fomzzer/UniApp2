@@ -76,7 +76,7 @@ cp .env.example .env
 ./deploy.sh
 ```
 
-`deploy.sh` поднимает `api` + `caddy`. Caddy сам получает и продлевает HTTPS-сертификат. По умолчанию также открыт старый порт 8000, чтобы версия 1.0 продолжала работать; отключить: `LEGACY_PORT=0 ./deploy.sh`.
+`deploy.sh` поднимает `api` + `caddy`. Caddy сам получает и продлевает HTTPS-сертификат.
 
 ## Android
 
