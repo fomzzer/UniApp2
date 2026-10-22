@@ -71,6 +71,7 @@ jobs:
           exit ${STATUS:-0}
 
       - name: Extract frames
+        if: always()
         run: |
           mkdir -p capture/frames
           ffmpeg -loglevel error -i capture/run.mov -vf "fps=60,scale=390:-2" capture/frames/%05d.png

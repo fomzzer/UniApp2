@@ -65,6 +65,8 @@ struct SecretField: UIViewRepresentable {
         if needsReload && field.isFirstResponder {
             field.reloadInputViews()
         }
+        guard context.coordinator.focusState != isFocused else { return }
+        context.coordinator.focusState = isFocused
         if isFocused && !field.isFirstResponder {
             DispatchQueue.main.async { field.becomeFirstResponder() }
         } else if !isFocused && field.isFirstResponder {
@@ -74,9 +76,11 @@ struct SecretField: UIViewRepresentable {
 
     final class Coordinator: NSObject, UITextFieldDelegate {
         var parent: SecretField
+        var focusState: Bool
 
         init(parent: SecretField) {
             self.parent = parent
+            self.focusState = parent.isFocused
         }
 
         @objc func editingChanged(_ field: UITextField) {
@@ -120,6 +124,7 @@ struct SecretField: UIViewRepresentable {
         }
 
         private func setFocused(_ value: Bool) {
+            focusState = value
             guard parent.isFocused != value else { return }
             DispatchQueue.main.async { self.parent.isFocused = value }
         }
