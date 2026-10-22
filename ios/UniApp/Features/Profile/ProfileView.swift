@@ -32,6 +32,7 @@ struct ProfileView: View {
                             navigationRow(title: s.about, systemImage: "info.circle.fill")
                         }
                         .buttonStyle(.glassTile())
+                        .accessibilityIdentifier("profile.about")
                         Button(role: .destructive) {
                             confirmSignOut = true
                         } label: {

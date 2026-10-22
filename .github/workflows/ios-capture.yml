@@ -1,10 +1,14 @@
 name: iOS capture
 
-# Records the simulator while a UI test switches tabs, and uploads the video
-# plus per-frame PNGs for checking transitions frame by frame.
+# Records the simulator while a UI test runs, and uploads the video
+# plus per-frame PNGs for checking interactions frame by frame.
 
 on:
   workflow_dispatch:
+    inputs:
+      test:
+        description: UI test to record
+        default: UniAppUITests/TabTransitionCaptureTests
 
 permissions:
   contents: read
@@ -47,11 +51,13 @@ jobs:
             -derivedDataPath build/capture \
             CODE_SIGNING_ALLOWED=NO | xcbeautify --renderer github-actions
 
-      - name: Record tab switching
+      - name: Record UI test
+        env:
+          ONLY_TESTING: ${{ inputs.test }}
         run: |
           set -o pipefail
           mkdir -p capture
-          xcrun simctl io "$DEVICE_ID" recordVideo --codec h264 --force capture/tabs.mov &
+          xcrun simctl io "$DEVICE_ID" recordVideo --codec h264 --force capture/run.mov &
           RECORDER=$!
           sleep 2
           xcodebuild test-without-building \
@@ -66,12 +72,12 @@ jobs:
       - name: Extract frames
         run: |
           mkdir -p capture/frames
-          ffmpeg -loglevel error -i capture/tabs.mov -vf "fps=60,scale=240:-2" capture/frames/%05d.png
+          ffmpeg -loglevel error -i capture/run.mov -vf "fps=60,scale=390:-2" capture/frames/%05d.png
           ls capture/frames | wc -l
 
       - uses: actions/upload-artifact@v5
         if: always()
         with:
-          name: tab-capture-${{ github.run_number }}
+          name: capture-${{ github.run_number }}
           path: ios/capture
           retention-days: 7
