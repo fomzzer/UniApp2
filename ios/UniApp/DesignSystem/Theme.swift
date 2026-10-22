@@ -105,11 +105,11 @@ struct GlassTileButtonStyle: ButtonStyle {
             .background {
                 Color.clear
                     .glassCard(cornerRadius: cornerRadius, tint: tint)
-                    .overlay {
-                        shape
-                            .fill(.white.opacity(configuration.isPressed ? 0.09 : 0))
-                            .blendMode(.plusLighter)
-                    }
+                    .allowsHitTesting(false)
+            }
+            .overlay {
+                shape
+                    .fill(.white.opacity(configuration.isPressed ? 0.06 : 0))
                     .allowsHitTesting(false)
             }
             .scaleEffect(configuration.isPressed ? 0.965 : 1)
@@ -124,9 +124,9 @@ struct RowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(.rect)
-            .background {
+            .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.white.opacity(configuration.isPressed ? 0.08 : 0))
+                    .fill(.white.opacity(configuration.isPressed ? 0.06 : 0))
                     .padding(.horizontal, -inset)
                     .allowsHitTesting(false)
             }

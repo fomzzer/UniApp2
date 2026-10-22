@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       test:
-        description: UI test to record
+        description: UI tests to record, separated by spaces
         default: UniAppUITests/TabTransitionCaptureTests
 
 permissions:
@@ -64,6 +64,7 @@ jobs:
             -project UniApp.xcodeproj \
             -scheme UniAppCapture \
             -destination "id=$DEVICE_ID" \
+            $(printf -- '-only-testing:%s ' $ONLY_TESTING) \
             -derivedDataPath build/capture | xcbeautify --renderer github-actions || STATUS=$?
           kill -INT $RECORDER
           wait $RECORDER || true
