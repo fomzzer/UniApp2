@@ -186,16 +186,20 @@ struct HomeView: View {
                     }
                 }
                 Spacer(minLength: 8)
-                Button(item == nil ? s.choose : s.open) {
+                Button {
                     if let item {
                         openedSchedule = item
                     } else {
                         scheduleKind = .lectures
                         selection = .schedule
                     }
+                } label: {
+                    Text(item == nil ? s.choose : s.open)
+                        .contentTransition(.opacity)
                 }
-                .buttonStyle(.glassProminent)
-                .tint(Theme.accent)
+                .buttonStyle(.pill(tint: Theme.accent))
+                .animation(.smooth(duration: 0.3), value: item == nil)
+                .accessibilityIdentifier("home.openSchedule")
             }
         }
     }

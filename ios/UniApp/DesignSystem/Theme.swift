@@ -142,6 +142,38 @@ extension ButtonStyle where Self == RowButtonStyle {
     }
 }
 
+struct PillButtonStyle: ButtonStyle {
+    var tint: Color = Theme.accent
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .contentShape(.capsule)
+            .background {
+                Color.clear
+                    .glassEffect(.regular.tint(tint.opacity(0.9)), in: .capsule)
+                    .overlay {
+                        Capsule()
+                            .fill(.white.opacity(configuration.isPressed ? 0.12 : 0))
+                    }
+                    .allowsHitTesting(false)
+            }
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(configuration.isPressed ? .smooth(duration: 0.16) : .spring(response: 0.45, dampingFraction: 0.6), value: configuration.isPressed)
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.6), trigger: configuration.isPressed) { _, pressed in pressed }
+    }
+}
+
+extension ButtonStyle where Self == PillButtonStyle {
+    static func pill(tint: Color = Theme.accent) -> PillButtonStyle {
+        PillButtonStyle(tint: tint)
+    }
+}
+
 extension ButtonStyle where Self == GlassTileButtonStyle {
     static func glassTile(cornerRadius: CGFloat = Theme.rowRadius, tint: Color? = nil) -> GlassTileButtonStyle {
         GlassTileButtonStyle(cornerRadius: cornerRadius, tint: tint)

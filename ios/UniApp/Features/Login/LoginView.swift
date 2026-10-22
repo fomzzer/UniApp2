@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct LoginView: View {
     var prefilledFacultyNo: String? = nil
@@ -19,19 +20,21 @@ struct LoginView: View {
     @State private var progressStep = 0
     @State private var revealSecret = false
     @State private var successTrigger = 0
+    @State private var revealTrigger = 0
+    @State private var secretFocused = false
+    @State private var clipboardHasText = UIPasteboard.general.hasStrings
     @FocusState private var focus: Field?
 
     private static let facultyNoLimit = 10
 
     private enum Field {
         case facultyNo
-        case secret
     }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             AppBackground()
-                .onTapGesture { focus = nil }
+                .onTapGesture { dismissKeyboard() }
             GeometryReader { proxy in
                 ScrollView {
                     VStack(spacing: 28) {
@@ -55,7 +58,7 @@ struct LoginView: View {
                     .background {
                         Color.clear
                             .contentShape(Rectangle())
-                            .onTapGesture { focus = nil }
+                            .onTapGesture { dismissKeyboard() }
                     }
                 }
                 .scrollDismissesKeyboard(.interactively)
@@ -71,7 +74,15 @@ struct LoginView: View {
         .animation(.smooth(duration: 0.3), value: isSubmitting)
         .animation(.smooth(duration: 0.3), value: isDetecting)
         .animation(.smooth(duration: 0.25), value: revealSecret)
+        .animation(.smooth(duration: 0.25), value: clipboardHasText)
         .sensoryFeedback(.success, trigger: successTrigger)
+        .sensoryFeedback(.selection, trigger: revealTrigger)
+        .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+            clipboardHasText = UIPasteboard.general.hasStrings
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            clipboardHasText = UIPasteboard.general.hasStrings
+        }
         .onAppear {
             if facultyNo.isEmpty {
                 facultyNo = prefilledFacultyNo ?? session.lastKnownFacultyNo ?? ""
@@ -116,40 +127,50 @@ struct LoginView: View {
                         .keyboardType(.numberPad)
                         .textContentType(.username)
                         .focused($focus, equals: .facultyNo)
+                        .accessibilityIdentifier("login.facultyNo")
                         .onChange(of: facultyNo) { _, value in
-                            let digits = String(value.filter(\.isNumber).prefix(Self.facultyNoLimit))
+                            let digits = Self.facultyDigits(value)
                             if digits != value { facultyNo = digits }
                         }
                     if isDetecting {
                         ProgressView().controlSize(.small).tint(.white)
                             .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    } else if facultyNo.isEmpty && clipboardHasText {
+                        pasteButton("login.pasteFacultyNo") { value in
+                            facultyNo = Self.facultyDigits(value)
+                        }
                     }
                 }
 
                 inputRow(systemImage: secretIcon) {
-                    Group {
-                        if revealSecret || method == .otp {
-                            TextField(s.secretTitle(method), text: $secret)
-                        } else {
-                            SecureField(s.secretTitle(method), text: $secret)
+                    SecretField(
+                        placeholder: s.secretTitle(method),
+                        text: $secret,
+                        isSecure: !(revealSecret || method == .otp),
+                        isFocused: $secretFocused,
+                        keyboardType: method == .egn || method == .otp ? .numberPad : .default,
+                        contentType: method == .otp ? .oneTimeCode : .password,
+                        onSubmit: submit
+                    )
+                    if secret.isEmpty && clipboardHasText {
+                        pasteButton("login.pasteSecret") { value in
+                            secret = method == .otp ? value.filter(\.isNumber) : value
                         }
                     }
-                    .keyboardType(method == .password ? .default : .numberPad)
-                    .textContentType(method == .otp ? .oneTimeCode : .password)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($focus, equals: .secret)
-                    .submitLabel(.go)
-                    .onSubmit { submit() }
                     if method != .otp {
                         Button {
                             revealSecret.toggle()
+                            revealTrigger += 1
                         } label: {
                             Image(systemName: revealSecret ? "eye.slash" : "eye")
                                 .foregroundStyle(Theme.textSecondary)
                                 .contentTransition(.symbolEffect(.replace))
+                                .frame(width: 44, height: 44)
+                                .contentShape(.rect)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
+                        .padding(.trailing, -10)
+                        .accessibilityIdentifier("login.reveal")
                     }
                 }
 
@@ -191,6 +212,30 @@ struct LoginView: View {
         .padding(.horizontal, 16)
         .frame(height: 54)
         .glassEffect(.regular.tint(.white.opacity(0.04)), in: .rect(cornerRadius: 18))
+    }
+
+    private func pasteButton(_ identifier: String, onPaste: @escaping (String) -> Void) -> some View {
+        PasteButton(payloadType: String.self) { values in
+            guard let value = values.first?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return }
+            Task { @MainActor in
+                withAnimation(.smooth(duration: 0.25)) { onPaste(value) }
+            }
+        }
+        .labelStyle(.iconOnly)
+        .buttonBorderShape(.circle)
+        .controlSize(.small)
+        .tint(Theme.accent)
+        .accessibilityIdentifier(identifier)
+        .transition(.scale(scale: 0.6).combined(with: .opacity))
+    }
+
+    private static func facultyDigits(_ value: String) -> String {
+        String(value.filter(\.isNumber).prefix(facultyNoLimit))
+    }
+
+    private func dismissKeyboard() {
+        focus = nil
+        secretFocused = false
     }
 
     private var secretIcon: String {
@@ -285,7 +330,7 @@ struct LoginView: View {
             errorText = s.fieldsMissing
             return
         }
-        focus = nil
+        dismissKeyboard()
         errorText = nil
         isSubmitting = true
         let number = facultyNo
