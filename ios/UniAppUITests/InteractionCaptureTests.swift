@@ -34,7 +34,7 @@ final class InteractionCaptureTests: XCTestCase {
         let secret = app.secureTextFields["login.secret"]
         XCTAssertTrue(secret.waitForExistence(timeout: 20))
         secret.tap()
-        secret.typeText("abc123")
+        secret.typeText("481516")
         sleep(1)
 
         let reveal = app.buttons["login.reveal"]
@@ -42,19 +42,19 @@ final class InteractionCaptureTests: XCTestCase {
         sleep(1)
         let shown = app.textFields["login.secret"]
         XCTAssertTrue(shown.waitForExistence(timeout: 3))
-        XCTAssertEqual(shown.value as? String, "abc123")
+        XCTAssertEqual(shown.value as? String, "481516")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
 
-        shown.typeText("x")
-        XCTAssertEqual(shown.value as? String, "abc123x")
+        shown.typeText("2")
+        XCTAssertEqual(shown.value as? String, "4815162")
 
         reveal.tap()
         sleep(1)
         XCTAssertTrue(app.secureTextFields["login.secret"].waitForExistence(timeout: 3))
-        app.secureTextFields["login.secret"].typeText("y")
+        app.secureTextFields["login.secret"].typeText("3")
         reveal.tap()
         sleep(1)
-        XCTAssertEqual(app.textFields["login.secret"].value as? String, "abc123xy")
+        XCTAssertEqual(app.textFields["login.secret"].value as? String, "48151623")
         sleep(1)
     }
 
