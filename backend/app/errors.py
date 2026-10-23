@@ -30,5 +30,13 @@ def portal_unavailable(detail: str = "") -> ServiceError:
     return ServiceError("portal_unavailable", 503, detail or "The university portal is unavailable")
 
 
+def unknown_schedule() -> ServiceError:
+    return ServiceError("unknown_schedule", 404, "Schedule does not exist")
+
+
+def schedule_unavailable() -> ServiceError:
+    return ServiceError("schedule_unavailable", 503, "The schedule file is unavailable")
+
+
 def parse_failed() -> ServiceError:
     return ServiceError("parse_failed", 502, "The university portal returned an unexpected page")

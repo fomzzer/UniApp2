@@ -28,6 +28,8 @@ class Settings:
         "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
     )
     degrees: tuple[str, ...] = field(default=("bachelor", "master"))
+    week_one: str = os.getenv("UNIAPP_WEEK_ONE", "2026-09-14")
+    timetable_max_bytes: int = _int("UNIAPP_TIMETABLE_MAX_BYTES", 15 * 1024 * 1024)
 
 
 settings = Settings()

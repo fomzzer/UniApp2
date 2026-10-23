@@ -109,6 +109,28 @@ class ScheduleList(APIModel):
     items: list[ScheduleItem] = Field(default_factory=list)
 
 
+class TimetableLesson(APIModel):
+    day: int = Field(ge=0, le=6)
+    start: str
+    end: str
+    groups: list[str] = Field(default_factory=list)
+    subject: str
+    kind: Literal["lecture", "lab", "seminar"] | None = None
+    room: str | None = None
+    week: Literal["odd", "even"] | None = None
+    text: str
+    notes: list[str] = Field(default_factory=list)
+
+
+class Timetable(APIModel):
+    schedule_id: int
+    status: Literal["ok", "unsupported"]
+    url: str
+    week_one: str | None = None
+    groups: list[str] = Field(default_factory=list)
+    lessons: list[TimetableLesson] = Field(default_factory=list)
+
+
 class ErrorDetail(APIModel):
     code: str
     message: str

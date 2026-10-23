@@ -18,15 +18,18 @@ from .models import (
     ScheduleKind,
     ScheduleList,
     Snapshot,
+    Timetable,
 )
 from .ratelimit import SlidingWindowLimiter
 from .schedules import ScheduleService, utc_now_iso
+from .timetables import TimetableService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("uniapp")
 
 portal = PortalClient(settings)
 schedules = ScheduleService(settings)
+timetables = TimetableService(settings, schedules)
 ip_limiter = SlidingWindowLimiter(settings.login_limit_per_ip, settings.login_limit_window)
 student_limiter = SlidingWindowLimiter(settings.login_limit_per_student, settings.login_limit_window)
 method_limiter = SlidingWindowLimiter(settings.login_limit_per_ip * 5, settings.login_limit_window)
@@ -102,6 +105,11 @@ def login(request: Request, body: LoginRequest) -> Snapshot:
 @app.get("/v2/schedules", response_model=ScheduleList, responses=ERROR_RESPONSES)
 def schedule_list(kind: ScheduleKind = "lectures") -> ScheduleList:
     return schedules.get(kind)
+
+
+@app.get("/v2/timetables/{schedule_id}", response_model=Timetable, responses=ERROR_RESPONSES)
+def timetable(schedule_id: int) -> Timetable:
+    return timetables.get(schedule_id)
 
 
 class LegacyLogin(BaseModel):

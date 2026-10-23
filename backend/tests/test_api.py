@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -80,6 +82,23 @@ def test_schedules_endpoint(client):
     body = client.get("/v2/schedules", params={"kind": "lectures"}).json()
     assert body["items"][0]["majorSlug"] == "m"
     assert body["items"][0]["isPdf"] is True
+
+
+def test_timetable_endpoint(client, monkeypatch, tmp_path):
+    pdf = (Path(__file__).parent / "fixtures" / "timetable_ksi.pdf").read_bytes()
+    downloads = []
+    monkeypatch.setattr(main.timetables, "_directory", str(tmp_path))
+    monkeypatch.setattr(main.timetables, "_memory", {})
+    monkeypatch.setattr(main.timetables, "_download", lambda url: downloads.append(url) or pdf)
+    body = client.get("/v2/timetables/1").json()
+    assert body["status"] == "ok"
+    assert body["weekOne"] == main.settings.week_one
+    assert "37а" in body["groups"]
+    lesson = next(lesson for lesson in body["lessons"] if lesson["week"] == "odd")
+    assert {"day", "start", "end", "groups", "subject", "kind", "room", "week", "text", "notes"} <= lesson.keys()
+    assert client.get("/v2/timetables/1").json() == body
+    assert downloads == ["https://x/a.pdf"]
+    assert client.get("/v2/timetables/2").status_code == 404
 
 
 def test_legacy_endpoints(client):
