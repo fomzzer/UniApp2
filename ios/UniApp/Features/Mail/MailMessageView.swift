@@ -169,10 +169,18 @@ struct MailMessageView: View {
     @ViewBuilder
     private func messageBody(_ content: MailContent) -> some View {
         if let html = content.html {
-            GlassCard(padding: 14) {
-                MailHTMLView(html: html, height: $bodyHeight)
-                    .frame(height: bodyHeight)
-            }
+            MailHTMLView(html: html, height: $bodyHeight)
+                .frame(height: bodyHeight)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background {
+                    RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                        .fill(Theme.deepBlue.opacity(0.35))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+                        }
+                }
         } else {
             GlassCard(padding: 18) {
                 Text(Self.linkified(content.text ?? ""))

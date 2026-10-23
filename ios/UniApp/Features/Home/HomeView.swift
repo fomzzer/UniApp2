@@ -46,6 +46,7 @@ struct HomeView: View {
                     .animation(.smooth(duration: 0.35), value: session.refreshError != nil)
                 }
             }
+            .scrollEdgeEffectHidden(true, for: .top)
             .background { AppBackground() }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .refreshable { await refresh() }
@@ -139,29 +140,27 @@ struct HomeView: View {
     }
 
     private func quickActions(_ student: Student) -> some View {
-        GlassEffectContainer(spacing: 18) {
-            HStack(alignment: .top) {
-                QuickActionButton(title: s.actionGrades, systemImage: "graduationcap.fill") {
-                    selection = .grades
-                }
-                Spacer()
-                QuickActionButton(title: s.actionSchedule, systemImage: "calendar") {
-                    scheduleKind = .lectures
-                    selection = .schedule
-                }
-                Spacer()
-                QuickActionButton(title: s.actionExams, systemImage: "pencil.and.list.clipboard") {
-                    scheduleKind = .exams
-                    selection = .schedule
-                }
-                Spacer()
-                QuickActionButton(title: s.actionMail, systemImage: "envelope.fill", badge: mail.inboxUnread) {
-                    showMail = true
-                }
-                .accessibilityIdentifier("home.mail")
+        HStack(alignment: .top) {
+            QuickActionButton(title: s.actionGrades, systemImage: "graduationcap.fill") {
+                selection = .grades
             }
-            .padding(.horizontal, 8)
+            Spacer()
+            QuickActionButton(title: s.actionSchedule, systemImage: "calendar") {
+                scheduleKind = .lectures
+                selection = .schedule
+            }
+            Spacer()
+            QuickActionButton(title: s.actionExams, systemImage: "pencil.and.list.clipboard") {
+                scheduleKind = .exams
+                selection = .schedule
+            }
+            Spacer()
+            QuickActionButton(title: s.actionMail, systemImage: "envelope.fill", badge: mail.inboxUnread) {
+                showMail = true
+            }
+            .accessibilityIdentifier("home.mail")
         }
+        .padding(.horizontal, 8)
     }
 
     private func myScheduleCard(_ student: Student) -> some View {
@@ -249,25 +248,26 @@ struct QuickActionButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 58, height: 58)
-                    .glassEffect(.regular.tint(Theme.accent.opacity(0.35)), in: .circle)
-                    .overlay(alignment: .topTrailing) {
-                        if badge > 0 {
-                            Text(badge > 99 ? "99+" : "\(badge)")
-                                .font(.caption2.weight(.bold))
-                                .monospacedDigit()
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
-                                .frame(minWidth: 20, minHeight: 20)
-                                .background(Theme.danger, in: .capsule)
-                                .offset(x: 4, y: -2)
-                                .transition(.scale.combined(with: .opacity))
-                        }
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: systemImage)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 58, height: 58)
+                        .glassEffect(.regular.tint(Theme.accent.opacity(0.35)), in: .circle)
+                    if badge > 0 {
+                        Text(badge > 99 ? "99+" : "\(badge)")
+                            .font(.caption2.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .frame(minWidth: 20, minHeight: 20)
+                            .background(Theme.danger, in: .capsule)
+                            .offset(x: 4, y: -2)
+                            .transition(.scale.combined(with: .opacity))
+                            .zIndex(1)
                     }
-                    .animation(.spring(response: 0.4, dampingFraction: 0.65), value: badge)
+                }
+                .animation(.spring(response: 0.4, dampingFraction: 0.65), value: badge)
                 Text(title)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Theme.textSecondary)
