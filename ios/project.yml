@@ -10,6 +10,7 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "2.0.10"
     CURRENT_PROJECT_VERSION: "11"
+    UNIAPP_COMMIT: local
     DEVELOPMENT_TEAM: ""
     TARGETED_DEVICE_FAMILY: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
@@ -27,6 +28,7 @@ targets:
         CFBundleLocalizations: [bg, ru]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UniAppCommit: $(UNIAPP_COMMIT)
         LSRequiresIPhoneOS: true
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSceneManifest:

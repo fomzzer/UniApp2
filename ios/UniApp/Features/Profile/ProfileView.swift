@@ -285,7 +285,8 @@ struct AboutView: View {
     private var version: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "2.0.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "\(short) (\(build))"
+        let commit = Bundle.main.object(forInfoDictionaryKey: "UniAppCommit") as? String ?? "local"
+        return "\(short) (\(build) · \(commit))"
     }
 
     var body: some View {

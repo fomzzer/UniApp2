@@ -15,10 +15,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  MARKETING_VERSION: 2.0.${{ github.run_number }}
-  BUILD_NUMBER: ${{ github.run_number }}
-
 jobs:
   build:
     runs-on: macos-26
@@ -28,6 +24,18 @@ jobs:
         working-directory: ios
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Version from commits
+        id: version
+        run: |
+          COUNT=$(git rev-list --count HEAD)
+          COMMIT=$(git rev-parse --short=7 HEAD)
+          echo "MARKETING_VERSION=2.0.$COUNT" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$COUNT" >> "$GITHUB_ENV"
+          echo "UNIAPP_COMMIT=$COMMIT" >> "$GITHUB_ENV"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
 
       - name: Select Xcode 26
         run: |
@@ -51,6 +59,7 @@ jobs:
             -derivedDataPath build/test \
             MARKETING_VERSION="$MARKETING_VERSION" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            UNIAPP_COMMIT="$UNIAPP_COMMIT" \
             CODE_SIGNING_ALLOWED=NO | xcbeautify --renderer github-actions
 
       - name: Build unsigned IPA
@@ -65,16 +74,17 @@ jobs:
             -derivedDataPath build/release \
             MARKETING_VERSION="$MARKETING_VERSION" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            UNIAPP_COMMIT="$UNIAPP_COMMIT" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" | xcbeautify --renderer github-actions
           mkdir -p Payload
           cp -R build/release/Build/Products/Release-iphoneos/UniApp.app Payload/
-          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" Payload/UniApp.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" -c "Print :UniAppCommit" Payload/UniApp.app/Info.plist
           zip -qry UniApp.ipa Payload
 
       - uses: actions/upload-artifact@v5
         with:
-          name: UniApp-${{ github.run_number }}-unsigned-ipa
+          name: UniApp-${{ steps.version.outputs.count }}-unsigned-ipa
           path: ios/UniApp.ipa
           retention-days: 30
