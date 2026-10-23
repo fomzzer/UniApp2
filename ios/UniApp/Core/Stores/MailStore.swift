@@ -30,15 +30,18 @@ final class MailStore {
         if ProcessInfo.processInfo.environment["UNIAPP_UITEST_MAIL"] != nil {
             service = FixtureMailService()
             persists = false
+            account = nil
+            lastUsername = nil
             phase = .signedOut
             return
         }
         #endif
+        let stored = KeychainStore.loadMail()
         service = IMAPMailService()
         persists = true
-        account = KeychainStore.loadMail()
-        lastUsername = account?.username
-        phase = account == nil ? .signedOut : .ready
+        account = stored
+        lastUsername = stored?.username
+        phase = stored == nil ? .signedOut : .ready
     }
 
     var inboxUnread: Int {
