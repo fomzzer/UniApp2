@@ -83,7 +83,9 @@ jobs:
             else
               SIMCTL_CHILD_UNIAPP_UITEST_TAB=$screen xcrun simctl launch "$DEVICE_ID" com.fomzzer.uniapp -AppleLanguages "(ru)" -AppleLocale ru_RU -settings.language ru -timetable.group 37б
             fi
-            sleep 25
+            sleep 15
+            xcrun simctl io "$DEVICE_ID" screenshot "screens/$screen-early.png"
+            sleep 35
             xcrun simctl io "$DEVICE_ID" screenshot "screens/$screen.png"
             xcrun simctl spawn "$DEVICE_ID" launchctl list | grep -q uniapp || echo "UniApp is not running after opening $screen"
           done

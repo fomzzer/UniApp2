@@ -303,7 +303,7 @@ struct TimetableLessonRow: View {
                             .foregroundStyle(kind.color)
                     }
                     if let room = lesson.room {
-                        Label(s.room(room), systemImage: "mappin.and.ellipse")
+                        Label(s.room(room), systemImage: "mappin")
                             .font(.caption.weight(.medium))
                             .foregroundStyle(Theme.textSecondary)
                             .labelStyle(.titleAndIcon)
