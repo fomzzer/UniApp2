@@ -3,6 +3,9 @@ import Foundation
 
 actor FixtureMailService: MailService {
     private var seen: Set<UInt32> = [3, 4, 5, 6, 7, 8]
+    private var flagged: Set<UInt32> = []
+    private var location: [UInt32: String] = [:]
+    private var sent: [RoundcubeMessage] = []
 
     func use(_ account: MailAccount) async {}
 
@@ -23,7 +26,6 @@ actor FixtureMailService: MailService {
 
     func page(folder: String, before: Int?, size: Int) async throws -> MailPage {
         try await Task.sleep(for: .milliseconds(400))
-        guard folder == "INBOX" else { return MailPage(summaries: [], nextBefore: nil) }
         let now = Date()
         let hour: TimeInterval = 3600
         let entries: [(UInt32, String, String, String, TimeInterval, Bool)] = [
@@ -36,7 +38,7 @@ actor FixtureMailService: MailService {
             (7, "Деканат ФКСТ", "dekanat.fkst@tu-sofia.bg", "Записване за избираеми дисциплини", 12 * 24 * hour, true),
             (8, "Кариерен център", "career@tu-sofia.bg", "Стажантска програма — зимен прием", 20 * 24 * hour, false),
         ]
-        let summaries = entries.map { entry in
+        let summaries = entries.filter { (location[$0.0] ?? "INBOX") == folder }.map { entry in
             MailSummary(
                 uid: entry.0,
                 subject: entry.3,
@@ -45,7 +47,7 @@ actor FixtureMailService: MailService {
                 cc: [],
                 date: now.addingTimeInterval(-entry.4),
                 isSeen: seen.contains(entry.0),
-                isFlagged: false,
+                isFlagged: flagged.contains(entry.0),
                 hasAttachments: entry.5,
                 size: 4096
             )
@@ -83,6 +85,47 @@ actor FixtureMailService: MailService {
         } else {
             seen.remove(uid)
         }
+    }
+
+    func setFlagged(_ value: Bool, uid: UInt32, folder: String) async throws {
+        if value {
+            flagged.insert(uid)
+        } else {
+            flagged.remove(uid)
+        }
+    }
+
+    func move(uid: UInt32, from folder: String, to target: String) async throws {
+        try await Task.sleep(for: .milliseconds(300))
+        location[uid] = target
+    }
+
+    func delete(uid: UInt32, folder: String, trash: String?) async throws {
+        try await Task.sleep(for: .milliseconds(300))
+        location[uid] = folder == (trash ?? MailFolder.trashPath) ? "Deleted" : (trash ?? MailFolder.trashPath)
+    }
+
+    func compose(_ intent: RoundcubeCompose.Intent) async throws -> RoundcubeCompose {
+        try await Task.sleep(for: .milliseconds(600))
+        var draft = RoundcubeCompose(intent: intent, id: "fixture", token: "token", identity: "1", storeTarget: "Sent", to: "", cc: "", subject: "", body: "")
+        switch intent {
+        case .new:
+            break
+        case .reply:
+            draft.to = "pgeorgiev@tu-sofia.bg"
+            draft.subject = "Re: Курсова работа по Бази от данни — краен срок"
+            draft.body = "\n\nНа 22.10.2026 г. доц. д-р Петър Георгиев написа:\n> Напомням, че крайният срок е 15 ноември."
+        case .forward:
+            draft.subject = "Fwd: Курсова работа по Бази от данни — краен срок"
+            draft.body = "\n\n-------- Препратено съобщение --------"
+        }
+        return draft
+    }
+
+    func send(_ message: RoundcubeMessage, using draft: RoundcubeCompose) async throws {
+        try await Task.sleep(for: .milliseconds(900))
+        guard message.to.contains("@") else { throw RoundcubeError.rejected("Невалиден адрес: \(message.to)") }
+        sent.append(message)
     }
 
     func signOut() async {}

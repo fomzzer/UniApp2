@@ -254,17 +254,46 @@ struct Strings: Sendable {
 
     var mailTitle: String { t("Университетска поща", "Университетская почта") }
     var mailSignInHint: String { t("Влез с данните си от TUSmail. Писмата се зареждат директно от пощенския сървър на университета.", "Войди с данными от TUSmail. Письма загружаются напрямую с почтового сервера университета.") }
-    var mailReadOnly: String { t("Засега пощата е само за четене: университетът не позволява изпращане извън мрежата си. Отговаряй през уеб пощата.", "Пока почта только для чтения: университет не разрешает отправку извне своей сети. Отвечай через веб-почту.") }
     var mailUsername: String { t("Потребител или имейл", "Логин или e-mail") }
     var mailPassword: String { t("Парола", "Пароль") }
     var mailServer: String { t("Сървър", "Сервер") }
     var mailEmpty: String { t("Няма писма", "Писем нет") }
     var mailLoadMore: String { t("Още писма", "Ещё письма") }
     var mailWeb: String { t("Уеб поща", "Веб-почта") }
-    var mailReplyWeb: String { t("Отговори в уеб пощата", "Ответить в веб-почте") }
     var mailSignOut: String { t("Изход от пощата", "Выйти из почты") }
     var mailMarkUnread: String { t("Маркирай като непрочетено", "Пометить непрочитанным") }
     var mailMarkRead: String { t("Маркирай като прочетено", "Пометить прочитанным") }
+    var mailCompose: String { t("Ново писмо", "Новое письмо") }
+    var mailSubject: String { t("Тема", "Тема") }
+    var mailBody: String { t("Текст на писмото", "Текст письма") }
+    var mailSend: String { t("Изпрати", "Отправить") }
+    var mailSending: String { t("Изпращане…", "Отправляем…") }
+    var mailPreparing: String { t("Подготвяме писмото…", "Готовим письмо…") }
+    var mailReply: String { t("Отговори", "Ответить") }
+    var mailReplyAll: String { t("Отговори на всички", "Ответить всем") }
+    var mailForward: String { t("Препрати", "Переслать") }
+    var mailDelete: String { t("Изтрий", "Удалить") }
+    var mailDeleteForever: String { t("Изтрий завинаги", "Удалить навсегда") }
+    var mailMoveTo: String { t("Премести в…", "Переместить в…") }
+    var mailFlag: String { t("Маркирай с флаг", "Отметить флажком") }
+    var mailUnflag: String { t("Махни флага", "Снять флажок") }
+    var mailRecipientsHint: String { t("Адреси, разделени със запетая", "Адреса через запятую") }
+    var mailSendFailed: String { t("Писмото не е изпратено", "Письмо не отправлено") }
+    var mailDiscard: String { t("Откажи писмото", "Удалить черновик") }
+    func mailSendMessage(for error: Error) -> String {
+        switch error as? RoundcubeError {
+        case .authenticationFailed:
+            t("Уеб пощата не прие данните за вход.", "Веб-почта не приняла логин и пароль.")
+        case .secondFactorRequired:
+            t("Този сървър изисква код за потвърждение. Изпращай през tusmail.tu-sofia.bg.", "Этот сервер требует код подтверждения. Отправляй через tusmail.tu-sofia.bg.")
+        case .rejected(let message):
+            message
+        case .sessionExpired, .unexpectedPage:
+            t("Уеб пощата върна неочакван отговор. Опитай пак.", "Веб-почта ответила неожиданно. Попробуй ещё раз.")
+        case .transport, nil:
+            t("Няма връзка с уеб пощата.", "Нет связи с веб-почтой.")
+        }
+    }
     var mailFrom: String { t("От", "От") }
     var mailTo: String { t("До", "Кому") }
     var mailCc: String { t("Копие", "Копия") }

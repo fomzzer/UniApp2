@@ -5,11 +5,15 @@ actor IMAPMailService: MailService {
     private var connection: IMAPConnection?
     private var selected: String?
     private var exists = 0
+    private var webmail: RoundcubeClient?
+    private var webmailReady = false
 
     func use(_ account: MailAccount) async {
         if self.account != account {
             await drop()
             self.account = account
+            webmail = nil
+            webmailReady = false
         }
     }
 
@@ -80,9 +84,93 @@ actor IMAPMailService: MailService {
         }
     }
 
+    func setFlagged(_ flagged: Bool, uid: UInt32, folder: String) async throws {
+        try await perform { connection in
+            if selected != folder {
+                try await select(folder, on: connection)
+            }
+            try await connection.command("UID STORE \(uid) \(flagged ? "+" : "-")FLAGS.SILENT (\\Flagged)")
+        }
+    }
+
+    func move(uid: UInt32, from folder: String, to target: String) async throws {
+        try await perform { connection in
+            try await transfer(uid: uid, from: folder, to: target, on: connection)
+        }
+    }
+
+    func delete(uid: UInt32, folder: String, trash: String?) async throws {
+        try await perform { connection in
+            if let trash, trash != folder {
+                try await transfer(uid: uid, from: folder, to: trash, on: connection)
+                return
+            }
+            if trash == nil, folder != MailFolder.trashPath {
+                _ = try? await connection.command("CREATE \(IMAPResponses.quote(MailFolder.trashPath))")
+                _ = try? await connection.command("SUBSCRIBE \(IMAPResponses.quote(MailFolder.trashPath))")
+                try await transfer(uid: uid, from: folder, to: MailFolder.trashPath, on: connection)
+                return
+            }
+            if selected != folder {
+                try await select(folder, on: connection)
+            }
+            try await connection.command("UID STORE \(uid) +FLAGS.SILENT (\\Deleted)")
+            try await expunge(uid, on: connection)
+        }
+    }
+
+    func compose(_ intent: RoundcubeCompose.Intent) async throws -> RoundcubeCompose {
+        try await mapWebmail {
+            try await $0.compose(intent)
+        }
+    }
+
+    func send(_ message: RoundcubeMessage, using draft: RoundcubeCompose) async throws {
+        try await mapWebmail {
+            try await $0.send(message, using: draft)
+        }
+    }
+
     func signOut() async {
         await drop()
+        await webmail?.logout()
+        webmail = nil
+        webmailReady = false
         account = nil
+    }
+
+    private func mapWebmail<T: Sendable>(_ body: (RoundcubeClient) async throws -> T) async throws -> T {
+        guard let account, let base = RoundcubeClient.base(forIMAPHost: account.host) else { throw RoundcubeError.authenticationFailed }
+        let client = webmail ?? RoundcubeClient(base: base)
+        webmail = client
+        if !webmailReady {
+            try await client.login(username: account.username, password: account.password)
+            webmailReady = true
+        }
+        return try await body(client)
+    }
+
+    private func transfer(uid: UInt32, from folder: String, to target: String, on connection: IMAPConnection) async throws {
+        if selected != folder {
+            try await select(folder, on: connection)
+        }
+        do {
+            try await connection.command("UID MOVE \(uid) \(IMAPResponses.quote(target))")
+        } catch MailError.server {
+            try await connection.command("UID COPY \(uid) \(IMAPResponses.quote(target))")
+            try await connection.command("UID STORE \(uid) +FLAGS.SILENT (\\Deleted)")
+            try await expunge(uid, on: connection)
+        }
+        selected = nil
+    }
+
+    private func expunge(_ uid: UInt32, on connection: IMAPConnection) async throws {
+        do {
+            try await connection.command("UID EXPUNGE \(uid)")
+        } catch MailError.server {
+            try await connection.command("EXPUNGE")
+        }
+        selected = nil
     }
 
     private func select(_ folder: String, on connection: IMAPConnection) async throws {

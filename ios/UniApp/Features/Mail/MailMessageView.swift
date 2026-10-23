@@ -7,12 +7,14 @@ struct MailMessageView: View {
 
     @Environment(MailStore.self) private var mail
     @Environment(\.strings) private var s
-    @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
 
     @State private var content: MailContent?
     @State private var failure: MailError?
     @State private var preview: URL?
     @State private var bodyHeight: CGFloat = 1
+    @State private var composing: ComposeRequest?
+    @State private var confirmDelete = false
 
     private var current: MailSummary {
         mail.summary(uid: summary.uid) ?? summary
@@ -61,22 +63,84 @@ struct MailMessageView: View {
                 EmptyView()
             } trailing: {
                 HStack(spacing: 0) {
-                    GlassBarButton(title: current.isSeen ? s.mailMarkUnread : s.mailMarkRead, systemImage: current.isSeen ? "envelope.badge" : "envelope.open") {
+                    GlassBarButton(title: current.isFlagged ? s.mailUnflag : s.mailFlag, systemImage: current.isFlagged ? "flag.fill" : "flag") {
                         let target = current
-                        Task { await mail.setSeen(!target.isSeen, for: target) }
+                        Task { await mail.setFlagged(!target.isFlagged, for: target) }
                     }
                     .contentTransition(.symbolEffect(.replace))
-                    GlassBarButton(title: s.mailReplyWeb, systemImage: "arrowshape.turn.up.left") {
-                        if let url = URL(string: "https://tusmail.tu-sofia.bg/") { openURL(url) }
+                    .accessibilityIdentifier("message.flag")
+                    Menu {
+                        Button(s.mailReply, systemImage: "arrowshape.turn.up.left") { compose(.reply(uid: current.uid, mailbox: mailbox, all: false)) }
+                        if current.to.count + current.cc.count > 1 {
+                            Button(s.mailReplyAll, systemImage: "arrowshape.turn.up.left.2") { compose(.reply(uid: current.uid, mailbox: mailbox, all: true)) }
+                        }
+                        Button(s.mailForward, systemImage: "arrowshape.turn.up.right") { compose(.forward(uid: current.uid, mailbox: mailbox)) }
+                    } label: {
+                        barIcon("arrowshape.turn.up.left")
                     }
+                    .accessibilityLabel(s.mailReply)
+                    .accessibilityIdentifier("message.reply")
+                    Menu {
+                        Button(current.isSeen ? s.mailMarkUnread : s.mailMarkRead, systemImage: current.isSeen ? "envelope.badge" : "envelope.open") {
+                            let target = current
+                            Task { await mail.setSeen(!target.isSeen, for: target) }
+                        }
+                        if !mail.moveTargets.isEmpty {
+                            Menu(s.mailMoveTo) {
+                                ForEach(mail.moveTargets) { folder in
+                                    Button(s.folderName(folder), systemImage: folder.role.systemImage) {
+                                        let target = current
+                                        Task {
+                                            if await mail.move(target, to: folder) { dismiss() }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Button(mail.isInTrash ? s.mailDeleteForever : s.mailDelete, systemImage: "trash", role: .destructive) {
+                            confirmDelete = true
+                        }
+                    } label: {
+                        barIcon("ellipsis")
+                    }
+                    .accessibilityIdentifier("message.more")
                 }
                 .padding(.horizontal, 4)
                 .appGlass(interactive: true, in: .capsule)
             }
         }
+        .sheet(item: $composing) { request in
+            MailComposeView(intent: request.intent)
+        }
+        .confirmationDialog(mail.isInTrash ? s.mailDeleteForever : s.mailDelete, isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button(mail.isInTrash ? s.mailDeleteForever : s.mailDelete, role: .destructive) {
+                let target = current
+                Task {
+                    if await mail.delete(target) { dismiss() }
+                }
+            }
+            Button(s.cancel, role: .cancel) {}
+        }
         .sensoryFeedback(.selection, trigger: current.isSeen)
+        .sensoryFeedback(.selection, trigger: current.isFlagged)
         .quickLookPreview($preview)
         .task { await load() }
+    }
+
+    private var mailbox: String {
+        mail.folder?.path ?? "INBOX"
+    }
+
+    private func compose(_ intent: RoundcubeCompose.Intent) {
+        composing = ComposeRequest(intent: intent)
+    }
+
+    private func barIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(width: 44, height: 44)
+            .contentShape(.rect)
     }
 
     private var header: some View {

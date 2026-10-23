@@ -198,6 +198,64 @@ final class InteractionCaptureTests: XCTestCase {
         XCTAssertFalse(app.buttons["nav.back"].exists, "swipe back: " + tree(app))
     }
 
+    func testMailActions() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot
+        app.launchEnvironment["UNIAPP_UITEST_MAIL"] = "1"
+        app.launchArguments += ["-AppleLanguages", "(ru)", "-AppleLocale", "ru_RU", "-settings.language", "ru"]
+        app.launch()
+
+        let mailButton = app.buttons["home.mail"]
+        XCTAssertTrue(mailButton.waitForExistence(timeout: 20))
+        mailButton.tap()
+        let password = app.secureTextFields["mail.password"]
+        XCTAssertTrue(password.waitForExistence(timeout: 10))
+        password.tap()
+        password.typeText("123456")
+        app.buttons["mail.signIn"].tap()
+        let rows = app.buttons.matching(identifier: "mail.row")
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
+        sleep(2)
+
+        app.buttons["mail.compose"].tap()
+        let to = app.textFields["compose.to"]
+        XCTAssertTrue(to.waitForExistence(timeout: 10), "compose: " + tree(app))
+        to.tap()
+        to.typeText("pgeorgiev@tu-sofia.bg")
+        app.textFields["compose.subject"].tap()
+        app.textFields["compose.subject"].typeText("Въпрос за курсовата")
+        app.textViews["compose.body"].tap()
+        app.textViews["compose.body"].typeText("Здравейте, кога е консултацията?")
+        sleep(1)
+        app.buttons["compose.send"].tap()
+        XCTAssertTrue(to.waitForNonExistence(timeout: 10), "compose stayed open: " + tree(app))
+        sleep(2)
+
+        let before = rows.count
+        rows.element(boundBy: 1).press(forDuration: 1.2)
+        let delete = app.buttons["Удалить"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "menu: " + tree(app))
+        delete.tap()
+        sleep(2)
+        XCTAssertEqual(rows.count, before - 1)
+
+        rows.element(boundBy: 0).tap()
+        let flag = app.buttons["message.flag"]
+        XCTAssertTrue(flag.waitForExistence(timeout: 10))
+        flag.tap()
+        sleep(1)
+        app.buttons["message.reply"].tap()
+        let reply = app.buttons["Ответить"]
+        XCTAssertTrue(reply.waitForExistence(timeout: 5), "reply menu: " + tree(app))
+        reply.tap()
+        XCTAssertTrue(app.textFields["compose.to"].waitForExistence(timeout: 10))
+        sleep(2)
+        XCTAssertEqual(app.textFields["compose.to"].value as? String, "pgeorgiev@tu-sofia.bg")
+        app.buttons["compose.send"].tap()
+        XCTAssertTrue(app.textFields["compose.to"].waitForNonExistence(timeout: 10))
+        sleep(2)
+    }
+
     func testNativeTimetable() throws {
         let app = XCUIApplication()
         app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot

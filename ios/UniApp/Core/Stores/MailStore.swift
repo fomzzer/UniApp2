@@ -156,6 +156,102 @@ final class MailStore {
         }
     }
 
+    func setFlagged(_ flagged: Bool, for summary: MailSummary) async {
+        guard let folder, let index = messages.firstIndex(where: { $0.uid == summary.uid }), messages[index].isFlagged != flagged else { return }
+        messages[index].isFlagged = flagged
+        do {
+            try await service.setFlagged(flagged, uid: summary.uid, folder: folder.path)
+        } catch {
+            if let index = messages.firstIndex(where: { $0.uid == summary.uid }) {
+                messages[index].isFlagged = !flagged
+            }
+            handle(error)
+        }
+    }
+
+    var moveTargets: [MailFolder] {
+        folders.filter { $0.path != folder?.path }
+    }
+
+    var isInTrash: Bool {
+        folder?.role == .trash
+    }
+
+    @discardableResult
+    func move(_ summary: MailSummary, to target: MailFolder) async -> Bool {
+        guard let folder else { return false }
+        return await remove(summary) {
+            try await self.service.move(uid: summary.uid, from: folder.path, to: target.path)
+        } adjusting: { folders in
+            if !summary.isSeen, let index = folders.firstIndex(where: { $0.path == target.path }) {
+                folders[index].unread += 1
+            }
+        }
+    }
+
+    @discardableResult
+    func delete(_ summary: MailSummary) async -> Bool {
+        guard let folder else { return false }
+        let trash = folders.first { $0.role == .trash }?.path
+        let created = trash == nil && folder.role != .trash
+        let removed = await remove(summary) {
+            try await self.service.delete(uid: summary.uid, folder: folder.path, trash: trash)
+        } adjusting: { _ in }
+        if removed, created, let loaded = try? await service.folders() {
+            folders = loaded.map { loadedFolder in
+                var copy = loadedFolder
+                if copy.path == folder.path, let current = self.folders.first(where: { $0.path == folder.path }) {
+                    copy.unread = current.unread
+                }
+                return copy
+            }
+        }
+        return removed
+    }
+
+    func compose(_ intent: RoundcubeCompose.Intent) async throws -> RoundcubeCompose {
+        if let account {
+            await service.use(account)
+        }
+        return try await service.compose(intent)
+    }
+
+    func send(_ message: RoundcubeMessage, using draft: RoundcubeCompose) async throws {
+        try await service.send(message, using: draft)
+        switch draft.intent {
+        case .reply(let uid, _, _), .forward(let uid, _):
+            if let index = messages.firstIndex(where: { $0.uid == uid }), !messages[index].isSeen {
+                messages[index].isSeen = true
+                adjustUnread(-1)
+            }
+        case .new:
+            break
+        }
+        if folder?.role == .sent {
+            await reload()
+        }
+    }
+
+    private func remove(_ summary: MailSummary, _ action: @escaping () async throws -> Void, adjusting: (inout [MailFolder]) -> Void) async -> Bool {
+        guard let index = messages.firstIndex(where: { $0.uid == summary.uid }) else { return false }
+        let snapshot = (messages, folders, folder)
+        messages.remove(at: index)
+        if !summary.isSeen {
+            adjustUnread(-1)
+        }
+        adjusting(&folders)
+        do {
+            try await action()
+            return true
+        } catch {
+            messages = snapshot.0
+            folders = snapshot.1
+            folder = snapshot.2
+            handle(error)
+            return false
+        }
+    }
+
     func signOut() {
         let service = service
         Task { await service.signOut() }

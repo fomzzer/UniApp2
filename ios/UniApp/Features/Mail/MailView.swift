@@ -6,6 +6,7 @@ struct MailView: View {
     @Environment(\.openURL) private var openURL
 
     @State private var confirmSignOut = false
+    @State private var composing: ComposeRequest?
 
     var body: some View {
         ZStack {
@@ -54,6 +55,21 @@ struct MailView: View {
                         .lineLimit(1)
                 }
             } trailing: {
+                if mail.phase == .ready {
+                    Button {
+                        composing = ComposeRequest(intent: .new)
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .contentShape(.circle)
+                    }
+                    .buttonStyle(.plain)
+                    .appGlass(interactive: true, in: .circle)
+                    .accessibilityLabel(s.mailCompose)
+                    .accessibilityIdentifier("mail.compose")
+                }
                 Menu {
                     Button(s.mailWeb, systemImage: "safari") { openWebMail() }
                     if mail.phase == .ready {
@@ -71,6 +87,9 @@ struct MailView: View {
                 .appGlass(interactive: true, in: .circle)
                 .accessibilityIdentifier("mail.menu")
             }
+        }
+        .sheet(item: $composing) { request in
+            MailComposeView(intent: request.intent)
         }
         .confirmationDialog(s.mailSignOut, isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button(s.mailSignOut, role: .destructive) {
@@ -112,6 +131,7 @@ struct MailView: View {
                                                 .padding(.horizontal, 10)
                                         }
                                         .buttonStyle(.row())
+                                        .contextMenu { rowActions(summary) }
                                         .accessibilityIdentifier("mail.row")
                                         if index < section.items.count - 1 {
                                             Divider().overlay(Theme.separator).padding(.leading, 66)
@@ -146,6 +166,34 @@ struct MailView: View {
             .animation(.smooth(duration: 0.35), value: mail.error)
         }
         .refreshable { await mail.reload() }
+    }
+
+    @ViewBuilder
+    private func rowActions(_ summary: MailSummary) -> some View {
+        Button(summary.isSeen ? s.mailMarkUnread : s.mailMarkRead, systemImage: summary.isSeen ? "envelope.badge" : "envelope.open") {
+            Task { await mail.setSeen(!summary.isSeen, for: summary) }
+        }
+        Button(summary.isFlagged ? s.mailUnflag : s.mailFlag, systemImage: summary.isFlagged ? "flag.slash" : "flag") {
+            Task { await mail.setFlagged(!summary.isFlagged, for: summary) }
+        }
+        Button(s.mailReply, systemImage: "arrowshape.turn.up.left") {
+            composing = ComposeRequest(intent: .reply(uid: summary.uid, mailbox: mail.folder?.path ?? "INBOX", all: false))
+        }
+        Button(s.mailForward, systemImage: "arrowshape.turn.up.right") {
+            composing = ComposeRequest(intent: .forward(uid: summary.uid, mailbox: mail.folder?.path ?? "INBOX"))
+        }
+        if !mail.moveTargets.isEmpty {
+            Menu(s.mailMoveTo) {
+                ForEach(mail.moveTargets) { folder in
+                    Button(s.folderName(folder), systemImage: folder.role.systemImage) {
+                        Task { await mail.move(summary, to: folder) }
+                    }
+                }
+            }
+        }
+        Button(mail.isInTrash ? s.mailDeleteForever : s.mailDelete, systemImage: "trash", role: .destructive) {
+            Task { await mail.delete(summary) }
+        }
     }
 
     private func errorBanner(_ error: MailError) -> some View {
@@ -229,6 +277,12 @@ struct MailRow: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
                     Spacer(minLength: 4)
+                    if summary.isFlagged {
+                        Image(systemName: "flag.fill")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Theme.gradeFair)
+                            .transition(.scale.combined(with: .opacity))
+                    }
                     if summary.hasAttachments {
                         Image(systemName: "paperclip")
                             .font(.caption.weight(.semibold))
@@ -248,6 +302,7 @@ struct MailRow: View {
         }
         .padding(.vertical, 12)
         .animation(.smooth(duration: 0.3), value: summary.isSeen)
+        .animation(.smooth(duration: 0.3), value: summary.isFlagged)
     }
 
     private var timeText: String {
@@ -395,10 +450,6 @@ struct MailSignInView: View {
                 .disabled(isSubmitting)
                 .accessibilityIdentifier("mail.signIn")
 
-                Label(s.mailReadOnly, systemImage: "info.circle")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.textTertiary)
-                    .padding(.horizontal, 4)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 40)

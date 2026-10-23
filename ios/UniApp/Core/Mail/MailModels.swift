@@ -122,5 +122,14 @@ protocol MailService: Sendable {
     func page(folder: String, before: Int?, size: Int) async throws -> MailPage
     func content(uid: UInt32, folder: String) async throws -> MailContent
     func setSeen(_ seen: Bool, uid: UInt32, folder: String) async throws
+    func setFlagged(_ flagged: Bool, uid: UInt32, folder: String) async throws
+    func move(uid: UInt32, from folder: String, to target: String) async throws
+    func delete(uid: UInt32, folder: String, trash: String?) async throws
+    func compose(_ intent: RoundcubeCompose.Intent) async throws -> RoundcubeCompose
+    func send(_ message: RoundcubeMessage, using draft: RoundcubeCompose) async throws
     func signOut() async
+}
+
+extension MailFolder {
+    static let trashPath = "Trash"
 }
