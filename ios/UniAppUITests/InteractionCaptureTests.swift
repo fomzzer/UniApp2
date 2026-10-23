@@ -92,8 +92,7 @@ final class InteractionCaptureTests: XCTestCase {
 
     private func tree(_ app: XCUIApplication) -> String {
         app.debugDescription
-            .split(separator: "
-")
+            .split(separator: "\n")
             .filter { $0.contains("Button") || $0.contains("NavigationBar") || $0.contains("StaticText") }
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .joined(separator: " | ")
