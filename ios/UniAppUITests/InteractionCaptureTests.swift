@@ -81,6 +81,27 @@ final class InteractionCaptureTests: XCTestCase {
         sleep(1)
     }
 
+    private func edgeSwipe(_ app: XCUIApplication) {
+        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
+        edge.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)), withVelocity: .slow, thenHoldForDuration: 0)
+    }
+
+    func testSwipeBackAbout() throws {
+        let app = launch(signedIn: true)
+        XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 20))
+        app.tabBars.buttons.element(boundBy: 3).tap()
+        let about = app.buttons["profile.about"]
+        XCTAssertTrue(about.waitForExistence(timeout: 10))
+        for _ in 0..<6 where !about.isHittable {
+            app.swipeUp()
+        }
+        about.tap()
+        sleep(2)
+        edgeSwipe(app)
+        sleep(2)
+        XCTAssertTrue(about.isHittable, "about swipe back: " + tree(app))
+    }
+
     private func goBack(_ app: XCUIApplication) {
         let back = app.buttons["nav.back"]
         if back.exists {
@@ -172,8 +193,7 @@ final class InteractionCaptureTests: XCTestCase {
         mailButton.tap()
         XCTAssertTrue(app.buttons["mail.row"].firstMatch.waitForExistence(timeout: 10))
         sleep(2)
-        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
-        edge.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        edgeSwipe(app)
         sleep(2)
         XCTAssertFalse(app.buttons["nav.back"].exists, "swipe back: " + tree(app))
     }
