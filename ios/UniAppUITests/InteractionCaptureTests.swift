@@ -236,7 +236,7 @@ final class InteractionCaptureTests: XCTestCase {
         for _ in 0..<3 where !delete.exists {
             rows.element(boundBy: 1).press(forDuration: 2)
             if delete.waitForExistence(timeout: 3) { break }
-            if app.buttons["nav.back"].exists {
+            if app.buttons["message.flag"].exists {
                 app.buttons["nav.back"].tap()
                 sleep(2)
             }
