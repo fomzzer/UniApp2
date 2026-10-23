@@ -129,6 +129,40 @@ Weekly lecture schedules or exam-session schedules, aggregated from the official
 
 `isPdf: false` means `url` points to an external web page (e.g. FDIBA) and should be opened in a browser.
 
+## `GET /v2/timetables/{scheduleId}`
+
+The PDF of one schedule item, parsed into lessons. The result is cached per schedule and file URL. `status: "unsupported"` means the layout could not be read and the client should show the PDF instead; `lessons` is then empty. Unknown ids return `404 unknown_schedule`, a failed download returns `503 schedule_unavailable`.
+
+```json
+{
+  "scheduleId": 491,
+  "status": "ok",
+  "url": "https://d3v.cloud.tu-sofia.bg/storage/download/schedules/….pdf",
+  "weekOne": "2026-09-14",
+  "groups": ["37а", "37б", "38а", "38б"],
+  "lessons": [
+    {
+      "day": 0,
+      "start": "7:30",
+      "end": "10:15",
+      "groups": ["37а", "37б"],
+      "subject": "САА",
+      "kind": "lab",
+      "room": "714",
+      "week": "odd",
+      "text": "САА лб 714",
+      "notes": []
+    }
+  ]
+}
+```
+
+- `day`: 0 is Monday.
+- `kind`: `lecture`, `lab`, `seminar` or `null` when the cell does not say.
+- `week`: `odd` or `even` for cells split by a diagonal (upper-left triangle is the odd week), `null` for every week.
+- `groups`: the row labels the lesson covers; empty when the schedule has no group rows.
+- `weekOne`: Monday of the first teaching week, used to tell odd weeks from even ones.
+
 ## Legacy
 
 `POST /api/login` and `GET /api/schedules` keep the exact v1.0 response shape so the old Qt app keeps working during the migration. They are hidden from the OpenAPI schema and will be removed later.
