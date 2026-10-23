@@ -50,12 +50,12 @@ jobs:
 
       - name: Send, reply and forward through Roundcube
         run: |
-          curl -fs --user student@localhost:secret "imap://localhost:3143/INBOX" -X "SELECT INBOX" > /dev/null
-          "$RUNNER_TEMP/check" http://localhost:8080/ student@localhost
+          curl -fs --user student@uniapp.test:secret "imap://localhost:3143/INBOX" -X "SELECT INBOX" > /dev/null
+          "$RUNNER_TEMP/check" http://localhost:8080/ student@uniapp.test
 
       - name: Verify the mailbox
         run: |
-          imap() { curl -fs --user student@localhost:secret "imap://localhost:3143/$1" -X "$2"; }
+          imap() { curl -fs --user student@uniapp.test:secret "imap://localhost:3143/$1" -X "$2"; }
           inbox=$(imap INBOX "SEARCH ALL")
           echo "INBOX: $inbox"
           [ "$(echo "$inbox" | tr -cd '0-9 ' | wc -w)" -ge 4 ]
