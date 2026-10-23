@@ -245,7 +245,7 @@ final class InteractionCaptureTests: XCTestCase {
         flag.tap()
         sleep(1)
         app.buttons["message.reply"].tap()
-        let reply = app.buttons["Ответить"]
+        let reply = app.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@", "Ответить", "message.reply")).firstMatch
         XCTAssertTrue(reply.waitForExistence(timeout: 5), "reply menu: " + tree(app))
         reply.tap()
         XCTAssertTrue(app.textFields["compose.to"].waitForExistence(timeout: 10))
