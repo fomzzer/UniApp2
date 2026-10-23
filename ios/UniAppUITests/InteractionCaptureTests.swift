@@ -140,6 +140,36 @@ final class InteractionCaptureTests: XCTestCase {
         sleep(2)
     }
 
+    func testMailOpenClose() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot
+        app.launchEnvironment["UNIAPP_UITEST_MAIL"] = "1"
+        app.launchArguments += ["-AppleLanguages", "(ru)", "-AppleLocale", "ru_RU", "-settings.language", "ru"]
+        app.launch()
+
+        let mailButton = app.buttons["home.mail"]
+        XCTAssertTrue(mailButton.waitForExistence(timeout: 20))
+        sleep(2)
+        mailButton.tap()
+        let password = app.secureTextFields["mail.password"]
+        XCTAssertTrue(password.waitForExistence(timeout: 10))
+        password.tap()
+        password.typeText("123456")
+        app.buttons["mail.signIn"].tap()
+        XCTAssertTrue(app.buttons["mail.row"].firstMatch.waitForExistence(timeout: 10))
+        sleep(2)
+        goBack(app)
+        for _ in 0..<2 {
+            XCTAssertTrue(mailButton.waitForExistence(timeout: 10))
+            sleep(2)
+            mailButton.tap()
+            XCTAssertTrue(app.buttons["mail.row"].firstMatch.waitForExistence(timeout: 10))
+            sleep(2)
+            goBack(app)
+        }
+        sleep(2)
+    }
+
     func testOpenSchedule() throws {
         let app = launch(signedIn: true)
         let open = app.buttons["home.openSchedule"]
