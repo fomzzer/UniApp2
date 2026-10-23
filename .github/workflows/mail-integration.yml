@@ -1,0 +1,72 @@
+name: Mail integration
+
+on:
+  push:
+    branches: [main]
+    paths: ["ios/UniApp/Core/Mail/RoundcubeClient.swift", "ios/MailIntegration/**", ".github/workflows/mail-integration.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  roundcube:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Start Roundcube 1.5 with a test mail server
+        run: |
+          mkdir -p "$RUNNER_TEMP/roundcube"
+          cat > "$RUNNER_TEMP/roundcube/test.php" <<'PHP'
+          <?php
+          $config['smtp_user'] = '';
+          $config['smtp_pass'] = '';
+          $config['create_default_folders'] = true;
+          $config['session_lifetime'] = 10;
+          $config['login_rate_limit'] = 0;
+          PHP
+          docker network create mail
+          docker run -d --name greenmail --network mail -p 3143:3143 -p 3025:3025 \
+            -e GREENMAIL_OPTS='-Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.auth.disabled' \
+            greenmail/standalone:2.0.1
+          docker run -d --name roundcube --network mail -p 8080:80 \
+            -e ROUNDCUBEMAIL_DEFAULT_HOST=greenmail -e ROUNDCUBEMAIL_DEFAULT_PORT=3143 \
+            -e ROUNDCUBEMAIL_SMTP_SERVER=greenmail -e ROUNDCUBEMAIL_SMTP_PORT=3025 \
+            -v "$RUNNER_TEMP/roundcube/test.php:/var/roundcube/config/test.php:ro" \
+            roundcube/roundcubemail:1.5.x-apache
+          for attempt in $(seq 1 90); do
+            if curl -fs http://localhost:8080/ | grep -q login-form; then echo "Roundcube is up"; exit 0; fi
+            sleep 2
+          done
+          docker logs roundcube
+          exit 1
+
+      - name: Build the checker
+        run: |
+          swift --version
+          swiftc -o "$RUNNER_TEMP/check" ios/UniApp/Core/Mail/RoundcubeClient.swift ios/MailIntegration/main.swift
+
+      - name: Send, reply and forward through Roundcube
+        run: |
+          curl -fs --user student@localhost:secret "imap://localhost:3143/INBOX" -X "SELECT INBOX" > /dev/null
+          "$RUNNER_TEMP/check" http://localhost:8080/ student@localhost
+
+      - name: Verify the mailbox
+        run: |
+          imap() { curl -fs --user student@localhost:secret "imap://localhost:3143/$1" -X "$2"; }
+          inbox=$(imap INBOX "SEARCH ALL")
+          echo "INBOX: $inbox"
+          [ "$(echo "$inbox" | tr -cd '0-9 ' | wc -w)" -ge 4 ]
+          flags=$(imap INBOX "UID FETCH 1 FLAGS")
+          echo "Flags: $flags"
+          echo "$flags" | grep -q 'Answered'
+          sent=$(imap Sent "SEARCH ALL")
+          echo "Sent: $sent"
+          [ "$(echo "$sent" | tr -cd '0-9 ' | wc -w)" -ge 4 ]
+          imap INBOX "UID FETCH 2 BODY.PEEK[HEADER.FIELDS (SUBJECT IN-REPLY-TO)]" | tee /dev/stderr | grep -qi 'In-Reply-To'
+
+      - name: Roundcube logs
+        if: failure()
+        run: docker logs roundcube 2>&1 | tail -100
