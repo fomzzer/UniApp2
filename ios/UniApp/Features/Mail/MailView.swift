@@ -22,14 +22,12 @@ struct MailView: View {
         .background { AppBackground(glow: 0.75) }
         .navigationTitle(mail.phase == .ready ? mail.folder.map(s.folderName) ?? s.mailTitle : s.mailTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarTitleMenu {
-            if mail.phase == .ready {
-                ForEach(mail.folders) { folder in
-                    Button {
-                        Task { await mail.select(folder) }
-                    } label: {
-                        Label(folder.unread > 0 ? "\(s.folderName(folder)) · \(folder.unread)" : s.folderName(folder), systemImage: folder.role.systemImage)
-                    }
+        .folderMenu(enabled: mail.phase == .ready && !mail.folders.isEmpty) {
+            ForEach(mail.folders) { folder in
+                Button {
+                    Task { await mail.select(folder) }
+                } label: {
+                    Label(folder.unread > 0 ? "\(s.folderName(folder)) · \(folder.unread)" : s.folderName(folder), systemImage: folder.role.systemImage)
                 }
             }
         }
@@ -165,12 +163,24 @@ struct MailView: View {
         if calendar.isDateInYesterday(date) { return s.mailYesterday }
         let sameYear = calendar.isDate(date, equalTo: .now, toGranularity: .year)
         let style = Date.FormatStyle(date: .omitted, time: .omitted).locale(s.language.locale).day().month(.wide).weekday(.wide)
-        return sameYear ? date.formatted(style).capitalized(with: s.language.locale) : date.formatted(Date.FormatStyle(date: .long, time: .omitted).locale(s.language.locale))
+        let text = sameYear ? date.formatted(style) : date.formatted(Date.FormatStyle(date: .long, time: .omitted).locale(s.language.locale))
+        return text.prefix(1).uppercased(with: s.language.locale) + text.dropFirst()
     }
 
     private func openWebMail() {
         if let url = URL(string: "https://tusmail.tu-sofia.bg/") {
             openURL(url)
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func folderMenu<Content: View>(enabled: Bool, @ViewBuilder content: () -> Content) -> some View {
+        if enabled {
+            toolbarTitleMenu(content: content)
+        } else {
+            self
         }
     }
 }

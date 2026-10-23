@@ -81,6 +81,15 @@ final class InteractionCaptureTests: XCTestCase {
         sleep(1)
     }
 
+    private func goBack(_ app: XCUIApplication) {
+        let back = app.navigationBars.buttons["BackButton"]
+        if back.exists {
+            back.tap()
+        } else {
+            app.swipeRight()
+        }
+    }
+
     func testMailFlow() throws {
         let app = XCUIApplication()
         app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot
@@ -107,11 +116,11 @@ final class InteractionCaptureTests: XCTestCase {
         app.buttons.matching(identifier: "mail.row").element(boundBy: 1).tap()
         XCTAssertTrue(app.buttons["mail.attachment"].waitForExistence(timeout: 10))
         sleep(3)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        goBack(app)
         sleep(2)
         app.buttons.matching(identifier: "mail.row").element(boundBy: 0).tap()
         sleep(3)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        goBack(app)
         sleep(2)
         app.swipeUp()
         sleep(2)
