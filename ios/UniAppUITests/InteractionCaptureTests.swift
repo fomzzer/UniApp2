@@ -90,6 +90,15 @@ final class InteractionCaptureTests: XCTestCase {
         }
     }
 
+    private func tree(_ app: XCUIApplication) -> String {
+        app.debugDescription
+            .split(separator: "
+")
+            .filter { $0.contains("Button") || $0.contains("NavigationBar") || $0.contains("StaticText") }
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .joined(separator: " | ")
+    }
+
     func testMailFlow() throws {
         let app = XCUIApplication()
         app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot
@@ -114,9 +123,9 @@ final class InteractionCaptureTests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         sleep(3)
         let second = app.buttons.matching(identifier: "mail.row").element(boundBy: 1)
-        XCTAssertTrue(second.isHittable, app.debugDescription)
+        XCTAssertTrue(second.isHittable, "hittable: " + tree(app))
         second.tap()
-        XCTAssertTrue(app.buttons["mail.attachment"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.buttons["mail.attachment"].waitForExistence(timeout: 10), "opened: " + tree(app))
         sleep(3)
         goBack(app)
         sleep(2)
