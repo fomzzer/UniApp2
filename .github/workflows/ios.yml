@@ -15,6 +15,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  MARKETING_VERSION: 2.0.${{ github.run_number }}
+  BUILD_NUMBER: ${{ github.run_number }}
+
 jobs:
   build:
     runs-on: macos-26
@@ -24,18 +28,9 @@ jobs:
         working-directory: ios
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
-      - name: Version from commits
-        id: version
-        run: |
-          COUNT=$(git rev-list --count HEAD)
-          COMMIT=$(git rev-parse --short=7 HEAD)
-          echo "MARKETING_VERSION=2.0.$COUNT" >> "$GITHUB_ENV"
-          echo "BUILD_NUMBER=$COUNT" >> "$GITHUB_ENV"
-          echo "UNIAPP_COMMIT=$COMMIT" >> "$GITHUB_ENV"
-          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+      - name: Commit for About
+        run: echo "UNIAPP_COMMIT=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_ENV"
 
       - name: Select Xcode 26
         run: |
@@ -85,6 +80,6 @@ jobs:
 
       - uses: actions/upload-artifact@v5
         with:
-          name: UniApp-${{ steps.version.outputs.count }}-unsigned-ipa
+          name: UniApp-${{ github.run_number }}-unsigned-ipa
           path: ios/UniApp.ipa
           retention-days: 30
