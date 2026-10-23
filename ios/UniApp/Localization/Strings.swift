@@ -199,6 +199,54 @@ struct Strings: Sendable {
         )
     }
 
+    var mailTitle: String { t("Университетска поща", "Университетская почта") }
+    var mailSignInHint: String { t("Влез с данните си от TUSmail. Писмата се зареждат директно от пощенския сървър на университета.", "Войди с данными от TUSmail. Письма загружаются напрямую с почтового сервера университета.") }
+    var mailReadOnly: String { t("Засега пощата е само за четене: университетът не позволява изпращане извън мрежата си. Отговаряй през уеб пощата.", "Пока почта только для чтения: университет не разрешает отправку извне своей сети. Отвечай через веб-почту.") }
+    var mailUsername: String { t("Потребител или имейл", "Логин или e-mail") }
+    var mailPassword: String { t("Парола", "Пароль") }
+    var mailServer: String { t("Сървър", "Сервер") }
+    var mailEmpty: String { t("Няма писма", "Писем нет") }
+    var mailLoadMore: String { t("Още писма", "Ещё письма") }
+    var mailWeb: String { t("Уеб поща", "Веб-почта") }
+    var mailReplyWeb: String { t("Отговори в уеб пощата", "Ответить в веб-почте") }
+    var mailSignOut: String { t("Изход от пощата", "Выйти из почты") }
+    var mailMarkUnread: String { t("Маркирай като непрочетено", "Пометить непрочитанным") }
+    var mailMarkRead: String { t("Маркирай като прочетено", "Пометить прочитанным") }
+    var mailFrom: String { t("От", "От") }
+    var mailTo: String { t("До", "Кому") }
+    var mailCc: String { t("Копие", "Копия") }
+    var mailNoSubject: String { t("(без тема)", "(без темы)") }
+    var mailNoSender: String { t("Неизвестен подател", "Неизвестный отправитель") }
+    var mailAttachments: String { t("Прикачени файлове", "Вложения") }
+    var mailOpenFailed: String { t("Писмото не можа да се зареди", "Не удалось загрузить письмо") }
+    var mailToday: String { t("Днес", "Сегодня") }
+    var mailYesterday: String { t("Вчера", "Вчера") }
+
+    func folderName(_ folder: MailFolder) -> String {
+        switch folder.role {
+        case .inbox: t("Входящи", "Входящие")
+        case .drafts: t("Чернови", "Черновики")
+        case .sent: t("Изпратени", "Отправленные")
+        case .archive: t("Архив", "Архив")
+        case .junk: t("Спам", "Спам")
+        case .trash: t("Кошче", "Корзина")
+        case .other: folder.name
+        }
+    }
+
+    func mailMessage(for error: MailError) -> String {
+        switch error {
+        case .authenticationFailed:
+            t("Грешен потребител или парола. Ако пощата изисква код за потвърждение, провери дали входът по IMAP е разрешен.", "Неверный логин или пароль. Если почта требует код подтверждения, проверь, разрешён ли вход по IMAP.")
+        case .timeout:
+            t("Пощенският сървър не отговори навреме.", "Почтовый сервер не ответил вовремя.")
+        case .connectionFailed, .closed:
+            t("Няма връзка с пощенския сървър.", "Нет связи с почтовым сервером.")
+        case .server:
+            t("Пощенският сървър отказа заявката.", "Почтовый сервер отклонил запрос.")
+        }
+    }
+
     func message(for error: Error) -> String {
         guard let error = error as? APIError else { return t("Нещо се обърка. Опитай пак.", "Что-то пошло не так. Попробуй ещё раз.") }
         switch error {

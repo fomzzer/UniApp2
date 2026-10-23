@@ -4,6 +4,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(SessionStore.self) private var session
     @Environment(AppSettings.self) private var settings
+    @Environment(MailStore.self) private var mail
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var isLocked = false
@@ -49,6 +50,11 @@ struct RootView: View {
         .task {
             isLocked = settings.biometricLock
             session.bootstrap()
+        }
+        .onChange(of: session.phase) { _, phase in
+            if phase == .signedOut && mail.phase == .ready {
+                mail.signOut()
+            }
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             switch phase {

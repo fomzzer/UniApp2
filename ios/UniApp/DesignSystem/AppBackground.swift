@@ -52,13 +52,14 @@ struct SectionHeader: View {
 struct AvatarView: View {
     let initials: String
     var size: CGFloat = 52
+    var tint: Color = Theme.accent
 
     var body: some View {
         Text(initials)
             .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .glassEffect(.regular.tint(Theme.accent.opacity(0.55)), in: .circle)
+            .glassEffect(.regular.tint(tint.opacity(0.55)), in: .circle)
     }
 }
 

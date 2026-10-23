@@ -8,6 +8,7 @@ struct SecretField: UIViewRepresentable {
     @Binding var isFocused: Bool
     var keyboardType: UIKeyboardType = .default
     var contentType: UITextContentType = .password
+    var identifier = "login.secret"
     var onSubmit: () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
@@ -35,7 +36,7 @@ struct SecretField: UIViewRepresentable {
         field.isSecureTextEntry = isSecure
         field.keyboardType = keyboardType
         field.textContentType = contentType
-        field.accessibilityIdentifier = "login.secret"
+        field.accessibilityIdentifier = identifier
         return field
     }
 

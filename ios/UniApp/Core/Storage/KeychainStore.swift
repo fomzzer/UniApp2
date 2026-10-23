@@ -9,9 +9,10 @@ struct Credentials: Codable, Hashable, Sendable {
 
 enum KeychainStore {
     private static let service = "com.fomzzer.uniapp.credentials"
-    private static let account = "primary"
+    private static let primaryAccount = "primary"
+    private static let mailAccount = "mail"
 
-    private static var baseQuery: [String: Any] {
+    private static func baseQuery(_ account: String) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -20,26 +21,46 @@ enum KeychainStore {
     }
 
     static func save(_ credentials: Credentials) {
-        guard let data = try? JSONEncoder().encode(credentials) else { return }
-        delete()
-        var query = baseQuery
+        write(credentials, account: primaryAccount)
+    }
+
+    static func load() -> Credentials? {
+        read(Credentials.self, account: primaryAccount)
+    }
+
+    static func delete() {
+        SecItemDelete(baseQuery(primaryAccount) as CFDictionary)
+    }
+
+    static func saveMail(_ credentials: MailAccount) {
+        write(credentials, account: mailAccount)
+    }
+
+    static func loadMail() -> MailAccount? {
+        read(MailAccount.self, account: mailAccount)
+    }
+
+    static func deleteMail() {
+        SecItemDelete(baseQuery(mailAccount) as CFDictionary)
+    }
+
+    private static func write<T: Encodable>(_ value: T, account: String) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        SecItemDelete(baseQuery(account) as CFDictionary)
+        var query = baseQuery(account)
         query[kSecValueData as String] = data
         query[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         SecItemAdd(query as CFDictionary, nil)
     }
 
-    static func load() -> Credentials? {
-        var query = baseQuery
+    private static func read<T: Decodable>(_ type: T.Type, account: String) -> T? {
+        var query = baseQuery(account)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         var item: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data else {
             return nil
         }
-        return try? JSONDecoder().decode(Credentials.self, from: data)
-    }
-
-    static func delete() {
-        SecItemDelete(baseQuery as CFDictionary)
+        return try? JSONDecoder().decode(type, from: data)
     }
 }

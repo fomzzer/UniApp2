@@ -6,13 +6,14 @@ struct HomeView: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(ScheduleStore.self) private var schedules
+    @Environment(MailStore.self) private var mail
     @Environment(\.strings) private var s
     @Environment(\.locale) private var locale
-    @Environment(\.openURL) private var openURL
 
     @AppStorage("schedule.kind") private var scheduleKind: ScheduleKind = .lectures
     @State private var openedSchedule: ScheduleItem?
     @State private var showReauth = false
+    @State private var showMail = false
 
     var body: some View {
         NavigationStack {
@@ -54,8 +55,14 @@ struct HomeView: View {
             .sheet(isPresented: $showReauth) {
                 LoginView(prefilledFacultyNo: session.lastKnownFacultyNo, isReauthentication: true)
             }
+            .navigationDestination(isPresented: $showMail) {
+                MailView()
+            }
             .task {
                 await schedules.load(.lectures)
+            }
+            .task {
+                await mail.start()
             }
         }
     }
@@ -148,11 +155,10 @@ struct HomeView: View {
                     selection = .schedule
                 }
                 Spacer()
-                QuickActionButton(title: s.actionMail, systemImage: "envelope.fill") {
-                    if let url = URL(string: "https://tusmail.tu-sofia.bg/") {
-                        openURL(url)
-                    }
+                QuickActionButton(title: s.actionMail, systemImage: "envelope.fill", badge: mail.inboxUnread) {
+                    showMail = true
                 }
+                .accessibilityIdentifier("home.mail")
             }
             .padding(.horizontal, 8)
         }
@@ -237,6 +243,7 @@ struct HomeView: View {
 struct QuickActionButton: View {
     let title: String
     let systemImage: String
+    var badge = 0
     let action: () -> Void
 
     var body: some View {
@@ -247,6 +254,20 @@ struct QuickActionButton: View {
                     .foregroundStyle(.white)
                     .frame(width: 58, height: 58)
                     .glassEffect(.regular.tint(Theme.accent.opacity(0.35)), in: .circle)
+                    .overlay(alignment: .topTrailing) {
+                        if badge > 0 {
+                            Text(badge > 99 ? "99+" : "\(badge)")
+                                .font(.caption2.weight(.bold))
+                                .monospacedDigit()
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .frame(minWidth: 20, minHeight: 20)
+                                .background(Theme.danger, in: .capsule)
+                                .offset(x: 4, y: -2)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .animation(.spring(response: 0.4, dampingFraction: 0.65), value: badge)
                 Text(title)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Theme.textSecondary)

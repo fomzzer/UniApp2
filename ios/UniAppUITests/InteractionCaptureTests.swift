@@ -81,6 +81,46 @@ final class InteractionCaptureTests: XCTestCase {
         sleep(1)
     }
 
+    func testMailFlow() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot
+        app.launchEnvironment["UNIAPP_UITEST_MAIL"] = "1"
+        app.launchArguments += ["-AppleLanguages", "(ru)", "-AppleLocale", "ru_RU", "-settings.language", "ru"]
+        app.launch()
+
+        let mailButton = app.buttons["home.mail"]
+        XCTAssertTrue(mailButton.waitForExistence(timeout: 20))
+        sleep(2)
+        mailButton.tap()
+
+        let password = app.secureTextFields["mail.password"]
+        XCTAssertTrue(password.waitForExistence(timeout: 10))
+        XCTAssertEqual(app.textFields["mail.username"].value as? String, "ivan@tu-sofia.bg")
+        sleep(2)
+        password.tap()
+        password.typeText("123456")
+        app.buttons["mail.signIn"].tap()
+
+        let row = app.buttons["mail.row"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        sleep(3)
+        app.buttons["mail.row"].element(boundBy: 1).tap()
+        XCTAssertTrue(app.buttons["mail.attachment"].waitForExistence(timeout: 10))
+        sleep(3)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        sleep(2)
+        app.buttons["mail.row"].element(boundBy: 0).tap()
+        sleep(3)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        sleep(2)
+        app.swipeUp()
+        sleep(2)
+        app.swipeDown()
+        sleep(2)
+        app.navigationBars.staticTexts.firstMatch.tap()
+        sleep(2)
+    }
+
     func testOpenSchedule() throws {
         let app = launch(signedIn: true)
         let open = app.buttons["home.openSchedule"]
