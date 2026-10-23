@@ -21,6 +21,7 @@ struct MailView: View {
         .animation(.smooth(duration: 0.4), value: mail.phase)
         .background { AppBackground(glow: 0.75) }
         .toolbarVisibility(.hidden, for: .navigationBar)
+        .swipeBack()
         .safeAreaBar(edge: .top) {
             GlassNavigationBar {
                 if mail.phase == .ready, !mail.folders.isEmpty {

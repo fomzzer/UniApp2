@@ -151,3 +151,51 @@ struct GlassBarButton: View {
         .accessibilityLabel(title)
     }
 }
+
+extension View {
+    func swipeBack() -> some View {
+        background { SwipeBackEnabler().frame(width: 0, height: 0) }
+    }
+}
+
+private struct SwipeBackEnabler: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller {
+        Controller()
+    }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {}
+
+    final class Controller: UIViewController {
+        override func didMove(toParent parent: UIViewController?) {
+            super.didMove(toParent: parent)
+            enable()
+        }
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            enable()
+        }
+
+        private func enable() {
+            guard let navigation = navigationController else { return }
+            SwipeBackDelegate.shared.attach(to: navigation)
+        }
+    }
+}
+
+private final class SwipeBackDelegate: NSObject, UIGestureRecognizerDelegate {
+    static let shared = SwipeBackDelegate()
+
+    private weak var navigation: UINavigationController?
+
+    func attach(to navigation: UINavigationController) {
+        self.navigation = navigation
+        guard let recognizer = navigation.interactivePopGestureRecognizer else { return }
+        recognizer.isEnabled = true
+        recognizer.delegate = self
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        (navigation?.viewControllers.count ?? 0) > 1
+    }
+}

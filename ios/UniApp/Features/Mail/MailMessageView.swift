@@ -55,6 +55,7 @@ struct MailMessageView: View {
         }
         .background { AppBackground(glow: 0.6) }
         .toolbarVisibility(.hidden, for: .navigationBar)
+        .swipeBack()
         .safeAreaBar(edge: .top) {
             GlassNavigationBar {
                 EmptyView()
