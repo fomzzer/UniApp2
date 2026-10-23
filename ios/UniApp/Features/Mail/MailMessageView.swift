@@ -54,17 +54,23 @@ struct MailMessageView: View {
             .animation(.smooth(duration: 0.35), value: failure)
         }
         .background { AppBackground(glow: 0.6) }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button(current.isSeen ? s.mailMarkUnread : s.mailMarkRead, systemImage: current.isSeen ? "envelope.badge" : "envelope.open") {
-                    let target = current
-                    Task { await mail.setSeen(!target.isSeen, for: target) }
+        .toolbarVisibility(.hidden, for: .navigationBar)
+        .safeAreaBar(edge: .top) {
+            GlassNavigationBar {
+                EmptyView()
+            } trailing: {
+                HStack(spacing: 0) {
+                    GlassBarButton(title: current.isSeen ? s.mailMarkUnread : s.mailMarkRead, systemImage: current.isSeen ? "envelope.badge" : "envelope.open") {
+                        let target = current
+                        Task { await mail.setSeen(!target.isSeen, for: target) }
+                    }
+                    .contentTransition(.symbolEffect(.replace))
+                    GlassBarButton(title: s.mailReplyWeb, systemImage: "arrowshape.turn.up.left") {
+                        if let url = URL(string: "https://tusmail.tu-sofia.bg/") { openURL(url) }
+                    }
                 }
-                .contentTransition(.symbolEffect(.replace))
-                Button(s.mailReplyWeb, systemImage: "arrowshape.turn.up.left") {
-                    if let url = URL(string: "https://tusmail.tu-sofia.bg/") { openURL(url) }
-                }
+                .padding(.horizontal, 4)
+                .glassEffect(.regular.interactive(), in: .capsule)
             }
         }
         .sensoryFeedback(.selection, trigger: current.isSeen)

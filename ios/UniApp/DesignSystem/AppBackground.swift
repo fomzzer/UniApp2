@@ -98,3 +98,56 @@ struct IconBadge: View {
             .animation(.smooth(duration: 0.3), value: tint)
     }
 }
+
+struct GlassNavigationBar<Center: View, Trailing: View>: View {
+    @ViewBuilder var center: Center
+    @ViewBuilder var trailing: Trailing
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.strings) private var s
+
+    var body: some View {
+        ZStack {
+            HStack(spacing: 12) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.backward")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.circle)
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: .circle)
+                .accessibilityLabel(s.back)
+                .accessibilityIdentifier("nav.back")
+                Spacer(minLength: 0)
+                trailing
+            }
+            center
+                .padding(.horizontal, 64)
+        }
+        .padding(.horizontal, Theme.pagePadding)
+        .padding(.top, 2)
+        .padding(.bottom, 8)
+    }
+}
+
+struct GlassBarButton: View {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+    }
+}

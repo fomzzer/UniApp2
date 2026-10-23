@@ -82,7 +82,7 @@ final class InteractionCaptureTests: XCTestCase {
     }
 
     private func goBack(_ app: XCUIApplication) {
-        let back = app.navigationBars.buttons["BackButton"]
+        let back = app.buttons["nav.back"]
         if back.exists {
             back.tap()
         } else {
@@ -167,7 +167,15 @@ final class InteractionCaptureTests: XCTestCase {
             sleep(2)
             goBack(app)
         }
+        XCTAssertTrue(mailButton.waitForExistence(timeout: 10))
         sleep(2)
+        mailButton.tap()
+        XCTAssertTrue(app.buttons["mail.row"].firstMatch.waitForExistence(timeout: 10))
+        sleep(2)
+        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+        edge.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+        sleep(2)
+        XCTAssertFalse(app.buttons["nav.back"].exists, "swipe back: " + tree(app))
     }
 
     func testOpenSchedule() throws {

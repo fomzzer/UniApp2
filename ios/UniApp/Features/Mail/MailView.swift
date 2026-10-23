@@ -20,10 +20,9 @@ struct MailView: View {
         }
         .animation(.smooth(duration: 0.4), value: mail.phase)
         .background { AppBackground(glow: 0.75) }
-        .navigationTitle(mail.phase == .ready ? mail.folder.map(s.folderName) ?? s.mailTitle : s.mailTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
+        .toolbarVisibility(.hidden, for: .navigationBar)
+        .safeAreaBar(edge: .top) {
+            GlassNavigationBar {
                 if mail.phase == .ready, !mail.folders.isEmpty {
                     Menu {
                         ForEach(mail.folders) { folder in
@@ -38,10 +37,12 @@ struct MailView: View {
                             Text(mail.folder.map(s.folderName) ?? s.mailTitle)
                                 .font(.headline)
                                 .foregroundStyle(.white)
+                                .lineLimit(1)
                             Image(systemName: "chevron.down")
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(Theme.textSecondary)
                         }
+                        .frame(height: 44)
                         .contentShape(.rect)
                     }
                     .accessibilityIdentifier("mail.folders")
@@ -49,9 +50,9 @@ struct MailView: View {
                     Text(s.mailTitle)
                         .font(.headline)
                         .foregroundStyle(.white)
+                        .lineLimit(1)
                 }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
+            } trailing: {
                 Menu {
                     Button(s.mailWeb, systemImage: "safari") { openWebMail() }
                     if mail.phase == .ready {
@@ -61,7 +62,12 @@ struct MailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.circle)
                 }
+                .glassEffect(.regular.interactive(), in: .circle)
                 .accessibilityIdentifier("mail.menu")
             }
         }

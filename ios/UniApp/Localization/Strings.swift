@@ -171,6 +171,7 @@ struct Strings: Sendable {
     var signOut: String { t("Изход", "Выйти") }
     var signOutConfirm: String { t("Изход от профила? Запазените данни ще бъдат изтрити от устройството.", "Выйти из аккаунта? Сохранённые данные будут удалены с устройства.") }
     var cancel: String { t("Отказ", "Отмена") }
+    var back: String { t("Назад", "Назад") }
 
     var locked: String { t("UniApp е заключен", "UniApp заблокирован") }
     var unlock: String { t("Отключи", "Разблокировать") }
