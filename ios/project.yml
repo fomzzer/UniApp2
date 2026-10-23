@@ -2,7 +2,7 @@ name: UniApp
 options:
   bundleIdPrefix: com.fomzzer
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "18.0"
   developmentLanguage: bg
   createIntermediateGroups: true
 settings:

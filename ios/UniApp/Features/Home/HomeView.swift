@@ -46,7 +46,7 @@ struct HomeView: View {
                     .animation(.smooth(duration: 0.35), value: session.refreshError != nil)
                 }
             }
-            .scrollEdgeEffectHidden(true, for: .top)
+            .appHidesTopScrollEdge()
             .background { AppBackground() }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .refreshable { await refresh() }
@@ -107,7 +107,7 @@ struct HomeView: View {
                 }
                 .animation(.smooth(duration: 0.3), value: session.isRefreshing)
                 .frame(width: 44, height: 44)
-                .glassEffect(.regular, in: .circle)
+                .appGlass(in: .circle)
             }
             .buttonStyle(.pressable)
             .disabled(session.isRefreshing)
@@ -257,7 +257,7 @@ struct QuickActionButton: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(width: 58, height: 58)
-                        .glassEffect(.regular.tint(Theme.accent.opacity(0.35)), in: .circle)
+                        .appGlass(tint: Theme.accent.opacity(0.35), in: .circle)
                     if badge > 0 {
                         Text(badge > 99 ? "99+" : "\(badge)")
                             .font(.caption2.weight(.bold))
@@ -312,7 +312,7 @@ struct GPAHeroCard: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .glassEffect(.regular.tint(Theme.gradeColor(gpa).opacity(0.6)), in: .capsule)
+                            .appGlass(tint: Theme.gradeColor(gpa).opacity(0.6), in: .capsule)
                     }
                 }
                 GPAScale(value: grades.gpa)

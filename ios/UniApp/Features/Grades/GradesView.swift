@@ -113,7 +113,7 @@ struct GradesView: View {
 
     private func semesterChips(_ semesters: [Semester]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            GlassEffectContainer(spacing: 10) {
+            AppGlassContainer(spacing: 10) {
                 HStack(spacing: 10) {
                     chip(title: s.allSemesters, isSelected: semesterFilter == nil) {
                         semesterFilter = nil
@@ -140,7 +140,7 @@ struct GradesView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .glassEffect(isSelected ? Glass.regular.tint(Theme.accent.opacity(0.8)) : Glass.regular, in: .capsule)
+                .appGlass(tint: isSelected ? Theme.accent.opacity(0.8) : nil, in: .capsule)
         }
         .buttonStyle(.pressable)
         .sensoryFeedback(.selection, trigger: isSelected)
@@ -158,7 +158,7 @@ struct GradesView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .glassEffect(.regular.tint(Theme.accent.opacity(0.7)), in: .capsule)
+                        .appGlass(tint: Theme.accent.opacity(0.7), in: .capsule)
                 }
                 Spacer()
                 if let average = semester.average {
@@ -167,7 +167,7 @@ struct GradesView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .glassEffect(.regular.tint(Theme.gradeColor(average).opacity(0.55)), in: .capsule)
+                        .appGlass(tint: Theme.gradeColor(average).opacity(0.55), in: .capsule)
                 }
             }
             .padding(.horizontal, 4)

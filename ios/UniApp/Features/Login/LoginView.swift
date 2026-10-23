@@ -211,7 +211,7 @@ struct LoginView: View {
         .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .frame(height: 54)
-        .glassEffect(.regular.tint(.white.opacity(0.04)), in: .rect(cornerRadius: 18))
+        .appGlass(tint: .white.opacity(0.04), in: .rect(cornerRadius: 18))
     }
 
     private func pasteButton(_ identifier: String, onPaste: @escaping (String) -> Void) -> some View {
@@ -260,7 +260,7 @@ struct LoginView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
         }
-        .buttonStyle(.glassProminent)
+        .appProminentButton()
         .tint(Theme.accent)
         .controlSize(.large)
         .disabled(isSubmitting)
@@ -270,7 +270,7 @@ struct LoginView: View {
         VStack(spacing: 8) {
             if isReauthentication {
                 Button(s.cancel) { dismiss() }
-                    .buttonStyle(.glass)
+                    .appGlassButton()
             }
             Text(s.disclaimerShort)
                 .font(.footnote)
@@ -295,7 +295,7 @@ struct LoginView: View {
         } label: {
             EmojiGlyph(emoji: settings.language.flag, size: 22)
                 .frame(width: 44, height: 44)
-                .glassEffect(.regular, in: .circle)
+                .appGlass(in: .circle)
         }
     }
 

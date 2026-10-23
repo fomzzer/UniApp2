@@ -135,7 +135,7 @@ struct LockView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                 }
-                .buttonStyle(.glassProminent)
+                .appProminentButton()
                 .tint(Theme.accent)
                 .controlSize(.large)
             }

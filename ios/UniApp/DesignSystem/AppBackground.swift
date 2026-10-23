@@ -59,7 +59,7 @@ struct AvatarView: View {
             .font(.system(size: size * 0.38, weight: .bold, design: .rounded))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .glassEffect(.regular.tint(tint.opacity(0.55)), in: .circle)
+            .appGlass(tint: tint.opacity(0.55), in: .circle)
     }
 }
 
@@ -94,7 +94,7 @@ struct IconBadge: View {
             .foregroundStyle(.white)
             .contentTransition(.symbolEffect(.replace))
             .frame(width: size, height: size)
-            .glassEffect(.regular.tint(tint.opacity(0.6)), in: .rect(cornerRadius: size * 0.32))
+            .appGlass(tint: tint.opacity(0.6), in: .rect(cornerRadius: size * 0.32))
             .animation(.smooth(duration: 0.3), value: tint)
     }
 }
@@ -119,7 +119,7 @@ struct GlassNavigationBar<Center: View, Trailing: View>: View {
                         .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
-                .glassEffect(.regular.interactive(), in: .circle)
+                .appGlass(interactive: true, in: .circle)
                 .accessibilityLabel(s.back)
                 .accessibilityIdentifier("nav.back")
                 Spacer(minLength: 0)

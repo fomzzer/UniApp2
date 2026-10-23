@@ -30,7 +30,7 @@ struct MainTabView: View {
                     .tabReveal(.profile, selection: selection, glow: 0.75)
             }
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
+        .appTabBarMinimizesOnScroll()
         .sensoryFeedback(.selection, trigger: selection)
     }
 }

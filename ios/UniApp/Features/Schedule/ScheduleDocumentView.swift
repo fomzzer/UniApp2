@@ -27,7 +27,7 @@ struct ScheduleDocumentView: View {
                         Text(item.url.host() ?? item.url.absoluteString)
                     } actions: {
                         Button(s.openInSafari) { if let url = item.webURL { openURL(url) } }
-                            .buttonStyle(.glassProminent)
+                            .appProminentButton()
                             .tint(Theme.accent)
                     }
                 } else if let fileURL {
@@ -43,10 +43,10 @@ struct ScheduleDocumentView: View {
                         Button(s.retry) {
                             Task { await load(force: true) }
                         }
-                        .buttonStyle(.glassProminent)
+                        .appProminentButton()
                         .tint(Theme.accent)
                         Button(s.openInSafari) { if let url = item.webURL { openURL(url) } }
-                            .buttonStyle(.glass)
+                            .appGlassButton()
                     }
                 } else {
                     ProgressView(s.loading)

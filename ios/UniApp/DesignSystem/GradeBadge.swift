@@ -11,7 +11,7 @@ struct GradeBadge: View {
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .contentTransition(.numericText())
-            .glassEffect(.regular.tint(color.opacity(0.75)), in: .rect(cornerRadius: size * 0.34))
+            .appGlass(tint: color.opacity(0.75), in: .rect(cornerRadius: size * 0.34))
             .animation(.smooth(duration: 0.35), value: text)
     }
 

@@ -22,7 +22,7 @@ struct MailView: View {
         .background { AppBackground(glow: 0.75) }
         .toolbarVisibility(.hidden, for: .navigationBar)
         .swipeBack()
-        .safeAreaBar(edge: .top) {
+        .appTopBar {
             GlassNavigationBar {
                 if mail.phase == .ready, !mail.folders.isEmpty {
                     Menu {
@@ -68,7 +68,7 @@ struct MailView: View {
                         .frame(width: 44, height: 44)
                         .contentShape(.circle)
                 }
-                .glassEffect(.regular.interactive(), in: .circle)
+                .appGlass(interactive: true, in: .circle)
                 .accessibilityIdentifier("mail.menu")
             }
         }
@@ -302,7 +302,7 @@ struct MailSignInView: View {
                         .font(.system(size: 34, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(width: 84, height: 84)
-                        .glassEffect(.regular.tint(Theme.accent.opacity(0.6)), in: .rect(cornerRadius: 26))
+                        .appGlass(tint: Theme.accent.opacity(0.6), in: .rect(cornerRadius: 26))
                         .shadow(color: Theme.accentBright.opacity(0.5), radius: 20)
                     Text(s.mailTitle)
                         .font(.title2.weight(.bold))
@@ -389,7 +389,7 @@ struct MailSignInView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                 }
-                .buttonStyle(.glassProminent)
+                .appProminentButton()
                 .tint(Theme.accent)
                 .controlSize(.large)
                 .disabled(isSubmitting)
@@ -432,7 +432,7 @@ struct MailSignInView: View {
         .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .frame(height: 54)
-        .glassEffect(.regular.tint(.white.opacity(0.04)), in: .rect(cornerRadius: 18))
+        .appGlass(tint: .white.opacity(0.04), in: .rect(cornerRadius: 18))
     }
 
     private func submit() {

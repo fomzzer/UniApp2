@@ -12,6 +12,9 @@ on:
       fps:
         description: Frames per second to extract
         default: "15"
+      ios:
+        description: Simulator iOS version, like 26 or 18.6
+        default: "26"
 
 permissions:
   contents: read
@@ -38,8 +41,21 @@ jobs:
           xcodegen generate
 
       - name: Boot simulator
+        env:
+          IOS_VERSION: ${{ inputs.ios }}
         run: |
-          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS-26' in k for x in v if x['name'].startswith('iPhone')))")
+          RUNTIME_KEY="iOS-$(echo "${IOS_VERSION:-26}" | tr . -)"
+          find_device() {
+            xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next((x['udid'] for k,v in sorted(d.items(), reverse=True) if '$RUNTIME_KEY' in k for x in v if x['name'].startswith('iPhone')), ''))"
+          }
+          DEVICE_ID=$(find_device)
+          if [ -z "$DEVICE_ID" ]; then
+            xcrun simctl list runtimes
+            sudo xcodebuild -downloadPlatform iOS -buildVersion "$IOS_VERSION"
+            RUNTIME_ID=$(xcrun simctl list runtimes -j | python3 -c "import json,sys; print(next(r['identifier'] for r in json.load(sys.stdin)['runtimes'] if '$RUNTIME_KEY' in r['identifier']))")
+            DEVICE_TYPE=$(xcrun simctl list devicetypes -j | python3 -c "import json,sys; print(next(t['identifier'] for t in reversed(json.load(sys.stdin)['devicetypes']) if 'iPhone-16-Pro' in t['identifier'] or 'iPhone-16' in t['identifier']))")
+            DEVICE_ID=$(xcrun simctl create "Capture iPhone" "$DEVICE_TYPE" "$RUNTIME_ID")
+          fi
           echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID" -b

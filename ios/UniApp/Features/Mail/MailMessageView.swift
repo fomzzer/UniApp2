@@ -36,7 +36,7 @@ struct MailMessageView: View {
                         Text(s.mailMessage(for: failure))
                     } actions: {
                         Button(s.retry) { Task { await load() } }
-                            .buttonStyle(.glassProminent)
+                            .appProminentButton()
                             .tint(Theme.accent)
                     }
                     .foregroundStyle(.white)
@@ -56,7 +56,7 @@ struct MailMessageView: View {
         .background { AppBackground(glow: 0.6) }
         .toolbarVisibility(.hidden, for: .navigationBar)
         .swipeBack()
-        .safeAreaBar(edge: .top) {
+        .appTopBar {
             GlassNavigationBar {
                 EmptyView()
             } trailing: {
@@ -71,7 +71,7 @@ struct MailMessageView: View {
                     }
                 }
                 .padding(.horizontal, 4)
-                .glassEffect(.regular.interactive(), in: .capsule)
+                .appGlass(interactive: true, in: .capsule)
             }
         }
         .sensoryFeedback(.selection, trigger: current.isSeen)
@@ -160,7 +160,7 @@ struct MailMessageView: View {
                             .frame(maxWidth: 220, alignment: .leading)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
-                            .glassEffect(.regular.tint(Theme.accent.opacity(0.3)), in: .capsule)
+                            .appGlass(tint: Theme.accent.opacity(0.3), in: .capsule)
                         }
                         .buttonStyle(.pressable)
                         .accessibilityIdentifier("mail.attachment")

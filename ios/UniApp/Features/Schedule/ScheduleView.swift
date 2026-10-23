@@ -212,7 +212,7 @@ struct ScheduleView: View {
                 Button(s.retry) {
                     Task { await store.load(kind, force: true) }
                 }
-                .buttonStyle(.glassProminent)
+                .appProminentButton()
                 .tint(Theme.accent)
             }
         } else if catalog.items.isEmpty {

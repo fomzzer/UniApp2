@@ -41,7 +41,7 @@ struct ProfileView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 6)
                         }
-                        .buttonStyle(.glass)
+                        .appGlassButton()
                         .tint(Theme.danger)
                         .controlSize(.large)
                         .confirmationDialog(s.signOut, isPresented: $confirmSignOut, titleVisibility: .visible) {
@@ -66,7 +66,7 @@ struct ProfileView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .glassEffect(.regular.tint(Theme.success.opacity(0.5)), in: .capsule)
+                        .appGlass(tint: Theme.success.opacity(0.5), in: .capsule)
                         .transition(.move(edge: .top).combined(with: .opacity))
                         .padding(.top, 8)
                 }
@@ -87,7 +87,7 @@ struct ProfileView: View {
                 .foregroundStyle(Theme.textSecondary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .glassEffect(.regular, in: .capsule)
+                .appGlass(in: .capsule)
         }
         .padding(.top, 8)
     }

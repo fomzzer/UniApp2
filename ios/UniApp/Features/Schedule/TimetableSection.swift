@@ -85,7 +85,7 @@ struct MyTimetableSection: View {
                     .frame(width: 40, height: 40)
                     .contentShape(.circle)
             }
-            .glassEffect(.regular.interactive(), in: .circle)
+            .appGlass(interactive: true, in: .circle)
             .accessibilityIdentifier("timetable.menu")
         }
         .padding(.horizontal, 4)
@@ -169,7 +169,7 @@ struct MyTimetableSection: View {
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 9)
-                                    .glassEffect(.regular.tint(Theme.accent.opacity(planner.group == group ? 0.7 : 0.2)).interactive(), in: .capsule)
+                                    .appGlass(tint: Theme.accent.opacity(planner.group == group ? 0.7 : 0.2), interactive: true, in: .capsule)
                             }
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("timetable.group")

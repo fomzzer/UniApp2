@@ -51,15 +51,7 @@ struct GlassCardModifier: ViewModifier {
     var tint: Color?
 
     func body(content: Content) -> some View {
-        content.glassEffect(glass, in: .rect(cornerRadius: cornerRadius))
-    }
-
-    private var glass: Glass {
-        var glass = Glass.regular
-        if let tint {
-            glass = glass.tint(tint)
-        }
-        return glass
+        content.appGlass(tint: tint, in: .rect(cornerRadius: cornerRadius))
     }
 }
 
@@ -155,7 +147,7 @@ struct PillButtonStyle: ButtonStyle {
             .contentShape(.capsule)
             .background {
                 Color.clear
-                    .glassEffect(.regular.tint(tint.opacity(0.9)), in: .capsule)
+                    .appGlass(tint: tint.opacity(0.9), in: .capsule)
                     .overlay {
                         Capsule()
                             .fill(.white.opacity(configuration.isPressed ? 0.12 : 0))
