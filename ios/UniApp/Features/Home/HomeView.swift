@@ -292,7 +292,7 @@ private extension View {
         if let namespace {
             matchedTransitionSource(id: QuickActionButton.zoomID, in: namespace) { source in
                 source
-                    .clipShape(RoundedRectangle(cornerRadius: 29, style: .continuous))
+                    .clipShape(.circle)
                     .background(.clear)
             }
         } else {
