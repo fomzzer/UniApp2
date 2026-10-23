@@ -1,15 +1,24 @@
 import SwiftUI
 
-enum AppTab: Hashable {
+enum AppTab: String, Hashable {
     case home
     case grades
     case schedule
     case profile
+
+    static var launch: AppTab {
+        #if DEBUG
+        if let value = ProcessInfo.processInfo.environment["UNIAPP_UITEST_TAB"], let tab = AppTab(rawValue: value) {
+            return tab
+        }
+        #endif
+        return .home
+    }
 }
 
 struct MainTabView: View {
     @Environment(\.strings) private var s
-    @State private var selection: AppTab = .home
+    @State private var selection: AppTab = .launch
 
     var body: some View {
         TabView(selection: $selection) {

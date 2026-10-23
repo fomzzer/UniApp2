@@ -13,7 +13,7 @@ struct HomeView: View {
     @AppStorage("schedule.kind") private var scheduleKind: ScheduleKind = .lectures
     @State private var openedSchedule: ScheduleItem?
     @State private var showReauth = false
-    @State private var showMail = false
+    @State private var showMail = Self.opensMail
 
     var body: some View {
         NavigationStack {
@@ -69,6 +69,14 @@ struct HomeView: View {
                 await mail.start()
             }
         }
+    }
+
+    private static var opensMail: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.environment["UNIAPP_UITEST_OPEN_MAIL"] != nil
+        #else
+        false
+        #endif
     }
 
     private func header(_ student: Student) -> some View {
