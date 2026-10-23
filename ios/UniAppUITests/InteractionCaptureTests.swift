@@ -202,7 +202,7 @@ final class InteractionCaptureTests: XCTestCase {
         let app = XCUIApplication()
         app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot
         app.launchEnvironment["UNIAPP_UITEST_TIMETABLE"] = TimetableFixture.json
-        app.launchArguments += ["-AppleLanguages", "(ru)", "-AppleLocale", "ru_RU", "-settings.language", "ru", "-timetable.group", ""]
+        app.launchArguments += ["-AppleLanguages", "(ru)", "-AppleLocale", "ru_RU", "-settings.language", "ru"]
         app.launch()
         XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 20))
         sleep(3)
