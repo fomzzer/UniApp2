@@ -71,9 +71,6 @@ struct MailView: View {
             }
             Button(s.cancel, role: .cancel) {}
         }
-        .navigationDestination(for: MailSummary.self) { summary in
-            MailMessageView(summary: summary)
-        }
         .task { await mail.start() }
     }
 
@@ -101,7 +98,9 @@ struct MailView: View {
                             GlassCard(padding: 6) {
                                 VStack(spacing: 0) {
                                     ForEach(Array(section.items.enumerated()), id: \.element.id) { index, summary in
-                                        NavigationLink(value: summary) {
+                                        NavigationLink {
+                                            MailMessageView(summary: summary)
+                                        } label: {
                                             MailRow(summary: summary, showsRecipients: mail.folder?.showsRecipients ?? false)
                                                 .padding(.horizontal, 10)
                                         }
