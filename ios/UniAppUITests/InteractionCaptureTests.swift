@@ -198,6 +198,34 @@ final class InteractionCaptureTests: XCTestCase {
         XCTAssertFalse(app.buttons["nav.back"].exists, "swipe back: " + tree(app))
     }
 
+    func testNativeTimetable() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["UNIAPP_UITEST_SNAPSHOT"] = Fixtures.snapshot
+        app.launchEnvironment["UNIAPP_UITEST_TIMETABLE"] = TimetableFixture.json
+        app.launchArguments += ["-AppleLanguages", "(ru)", "-AppleLocale", "ru_RU", "-settings.language", "ru", "-timetable.group", ""]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons.firstMatch.waitForExistence(timeout: 20))
+        sleep(3)
+        app.tabBars.buttons.element(boundBy: 2).tap()
+        let now = app.descendants(matching: .any)["timetable.now"].firstMatch
+        XCTAssertTrue(now.waitForExistence(timeout: 30), "timetable: " + tree(app))
+        sleep(2)
+        let chip = app.buttons.matching(identifier: "timetable.group").matching(NSPredicate(format: "label == %@", "37б")).firstMatch
+        if chip.waitForExistence(timeout: 5) {
+            chip.tap()
+            sleep(2)
+        }
+        let days = app.buttons.matching(identifier: "timetable.day")
+        for index in [0, 1, 3] where index < days.count {
+            days.element(boundBy: index).tap()
+            sleep(2)
+        }
+        app.segmentedControls.buttons["Чётная"].firstMatch.tap()
+        sleep(2)
+        app.swipeUp()
+        sleep(2)
+    }
+
     func testOpenSchedule() throws {
         let app = launch(signedIn: true)
         let open = app.buttons["home.openSchedule"]

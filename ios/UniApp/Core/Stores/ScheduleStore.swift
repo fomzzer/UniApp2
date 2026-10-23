@@ -83,6 +83,15 @@ final class ScheduleStore {
 
     func loadTimetable(_ item: ScheduleItem, force: Bool = false) async {
         guard item.isPdf, !timetableLoading.contains(item.id) else { return }
+        #if DEBUG
+        if let json = ProcessInfo.processInfo.environment["UNIAPP_UITEST_TIMETABLE"],
+           var fixture = try? APIClient.decoder.decode(Timetable.self, from: Data(json.utf8)) {
+            fixture.scheduleId = item.id
+            fixture.url = item.url.absoluteString
+            timetables[item.id] = fixture
+            return
+        }
+        #endif
         if timetables[item.id] == nil, let cached = DiskCache.loadTimetable(item.id), cached.url == item.url.absoluteString {
             timetables[item.id] = cached
         }
