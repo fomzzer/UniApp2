@@ -232,9 +232,16 @@ final class InteractionCaptureTests: XCTestCase {
         sleep(2)
 
         let before = rows.count
-        rows.element(boundBy: 1).press(forDuration: 1.2)
         let delete = app.buttons["Удалить"]
-        XCTAssertTrue(delete.waitForExistence(timeout: 5), "menu: " + tree(app))
+        for _ in 0..<3 where !delete.exists {
+            rows.element(boundBy: 1).press(forDuration: 2)
+            if delete.waitForExistence(timeout: 3) { break }
+            if app.buttons["nav.back"].exists {
+                app.buttons["nav.back"].tap()
+                sleep(2)
+            }
+        }
+        XCTAssertTrue(delete.exists, "menu: " + tree(app))
         delete.tap()
         sleep(2)
         XCTAssertEqual(rows.count, before - 1)
