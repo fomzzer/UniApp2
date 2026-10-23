@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var openedSchedule: ScheduleItem?
     @State private var showReauth = false
     @State private var showMail = false
+    @Namespace private var mailZoom
 
     var body: some View {
         NavigationStack {
@@ -58,6 +59,7 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $showMail) {
                 MailView()
+                    .navigationTransition(.zoom(sourceID: QuickActionButton.zoomID, in: mailZoom))
             }
             .task {
                 await schedules.load(.lectures)
@@ -155,7 +157,7 @@ struct HomeView: View {
                 selection = .schedule
             }
             Spacer()
-            QuickActionButton(title: s.actionMail, systemImage: "envelope.fill", badge: mail.inboxUnread) {
+            QuickActionButton(title: s.actionMail, systemImage: "envelope.fill", badge: mail.inboxUnread, zoom: mailZoom) {
                 showMail = true
             }
             .accessibilityIdentifier("home.mail")
@@ -243,7 +245,10 @@ struct QuickActionButton: View {
     let title: String
     let systemImage: String
     var badge = 0
+    var zoom: Namespace.ID? = nil
     let action: () -> Void
+
+    static let zoomID = "quickAction.zoom"
 
     var body: some View {
         Button(action: action) {
@@ -254,6 +259,7 @@ struct QuickActionButton: View {
                         .foregroundStyle(.white)
                         .frame(width: 58, height: 58)
                         .glassEffect(.regular.tint(Theme.accent.opacity(0.35)), in: .circle)
+                        .zoomSource(zoom)
                     if badge > 0 {
                         Text(badge > 99 ? "99+" : "\(badge)")
                             .font(.caption2.weight(.bold))
@@ -277,6 +283,21 @@ struct QuickActionButton: View {
             .contentShape(.rect)
         }
         .buttonStyle(.pressable)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func zoomSource(_ namespace: Namespace.ID?) -> some View {
+        if let namespace {
+            matchedTransitionSource(id: QuickActionButton.zoomID, in: namespace) { source in
+                source
+                    .clipShape(.circle)
+                    .background(.clear)
+            }
+        } else {
+            self
+        }
     }
 }
 
