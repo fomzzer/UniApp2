@@ -9,6 +9,9 @@ on:
       test:
         description: UI tests to record, separated by spaces
         default: UniAppUITests/TabTransitionCaptureTests
+      fps:
+        description: Frames per second to extract
+        default: "15"
 
 permissions:
   contents: read
@@ -72,9 +75,11 @@ jobs:
 
       - name: Extract frames
         if: always()
+        env:
+          FPS: ${{ inputs.fps }}
         run: |
           mkdir -p capture/frames
-          ffmpeg -loglevel error -i capture/run.mov -vf "fps=60,scale=390:-2" capture/frames/%05d.png
+          ffmpeg -loglevel error -i capture/run.mov -vf "fps=${FPS:-15},scale=390:-2" capture/frames/%05d.png
           ls capture/frames | wc -l
 
       - uses: actions/upload-artifact@v5

@@ -126,7 +126,7 @@ final class InteractionCaptureTests: XCTestCase {
         sleep(2)
         app.swipeDown()
         sleep(2)
-        app.navigationBars.staticTexts.firstMatch.tap()
+        app.buttons["mail.folders"].tap()
         sleep(2)
     }
 

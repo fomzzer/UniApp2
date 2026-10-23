@@ -22,16 +22,35 @@ struct MailView: View {
         .background { AppBackground(glow: 0.75) }
         .navigationTitle(mail.phase == .ready ? mail.folder.map(s.folderName) ?? s.mailTitle : s.mailTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .folderMenu(enabled: mail.phase == .ready && !mail.folders.isEmpty) {
-            ForEach(mail.folders) { folder in
-                Button {
-                    Task { await mail.select(folder) }
-                } label: {
-                    Label(folder.unread > 0 ? "\(s.folderName(folder)) · \(folder.unread)" : s.folderName(folder), systemImage: folder.role.systemImage)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                if mail.phase == .ready, !mail.folders.isEmpty {
+                    Menu {
+                        ForEach(mail.folders) { folder in
+                            Button {
+                                Task { await mail.select(folder) }
+                            } label: {
+                                Label(folder.unread > 0 ? "\(s.folderName(folder)) · \(folder.unread)" : s.folderName(folder), systemImage: folder.role.systemImage)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(mail.folder.map(s.folderName) ?? s.mailTitle)
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                            Image(systemName: "chevron.down")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        .contentShape(.rect)
+                    }
+                    .accessibilityIdentifier("mail.folders")
+                } else {
+                    Text(s.mailTitle)
+                        .font(.headline)
+                        .foregroundStyle(.white)
                 }
             }
-        }
-        .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button(s.mailWeb, systemImage: "safari") { openWebMail() }
@@ -170,17 +189,6 @@ struct MailView: View {
     private func openWebMail() {
         if let url = URL(string: "https://tusmail.tu-sofia.bg/") {
             openURL(url)
-        }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func folderMenu<Content: View>(enabled: Bool, @ViewBuilder content: () -> Content) -> some View {
-        if enabled {
-            toolbarTitleMenu(content: content)
-        } else {
-            self
         }
     }
 }
