@@ -285,7 +285,7 @@ struct MailHTMLView: UIViewRepresentable {
         :root { color-scheme: dark; }
         html, body { margin: 0; padding: 0; background: transparent !important; }
         body { font: -apple-system-body; font-size: 16px; line-height: 1.45; color: #EAF0FB; word-wrap: break-word; overflow-wrap: anywhere; -webkit-text-size-adjust: 100%; }
-        * { background-color: transparent !important; color: #EAF0FB !important; border-color: rgba(255,255,255,0.14) !important; max-width: 100%; }
+        * { background-color: transparent !important; background-image: none !important; color: #EAF0FB !important; border-color: rgba(255,255,255,0.14) !important; max-width: 100%; }
         a, a * { color: #7DADFF !important; }
         img { max-width: 100% !important; height: auto !important; border-radius: 8px; }
         table { width: auto !important; max-width: 100% !important; }
@@ -293,8 +293,40 @@ struct MailHTMLView: UIViewRepresentable {
         pre, code { white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 14px; }
         blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid rgba(125,173,255,0.6) !important; }
         hr { border: none; border-top: 1px solid rgba(255,255,255,0.14) !important; }
-        </style></head><body>\(html)</body></html>
+        </style></head><body>\(neutralized(html))</body></html>
         """
+    }
+
+    private static let styleAttribute = try? NSRegularExpression(pattern: #"(?is)\bstyle\s*=\s*("[^"]*"|'[^']*')"#)
+    private static let styleBlock = try? NSRegularExpression(pattern: #"(?is)<style\b[^>]*>.*?</style>"#)
+    private static let paintDeclaration = try? NSRegularExpression(pattern: #"(?i)(?<![-\w])(background(-color|-image)?|color)\s*:(url\([^)]*\)|[^;}"'])*;?"#)
+    private static let paintAttribute = try? NSRegularExpression(pattern: #"(?i)\s(bgcolor|background)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)"#)
+
+    static func neutralized(_ html: String) -> String {
+        guard let paintDeclaration else { return html }
+        var result = html
+        for pattern in [styleAttribute, styleBlock].compactMap({ $0 }) {
+            result = replacing(pattern, in: result) { match in
+                let source = match as NSString
+                return paintDeclaration.stringByReplacingMatches(in: match, range: NSRange(location: 0, length: source.length), withTemplate: "")
+            }
+        }
+        if let paintAttribute {
+            result = paintAttribute.stringByReplacingMatches(in: result, range: NSRange(location: 0, length: (result as NSString).length), withTemplate: "")
+        }
+        return result
+    }
+
+    private static func replacing(_ pattern: NSRegularExpression, in text: String, transform: (String) -> String) -> String {
+        let source = text as NSString
+        var result = ""
+        var cursor = 0
+        for match in pattern.matches(in: text, range: NSRange(location: 0, length: source.length)) {
+            result += source.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
+            result += transform(source.substring(with: match.range))
+            cursor = match.range.location + match.range.length
+        }
+        return result + source.substring(from: cursor)
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate {

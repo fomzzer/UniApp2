@@ -135,3 +135,23 @@ final class MIMETests: XCTestCase {
         XCTAssertNotNil(MIME.headerDate("Thu, 22 Oct 2026 14:05:00 +0300 (EEST)"))
     }
 }
+
+final class MailHTMLTests: XCTestCase {
+    func testNeutralizedDropsPaintButKeepsLayout() {
+        let html = """
+        <style>.c { background: #fff url('a.png') !important; color: #111 !important; border-color: #ccc; padding: 4px }</style>
+        <table bgcolor="#ffffff" background=bg.png><tr><td style="background-color:#FFF !important;color:#222;padding:8px">Hi</td></tr></table>
+        """
+        let result = MailHTMLView.neutralized(html)
+        XCTAssertFalse(result.contains("#fff"))
+        XCTAssertFalse(result.contains("#FFF"))
+        XCTAssertFalse(result.contains("#111"))
+        XCTAssertFalse(result.contains("#222"))
+        XCTAssertFalse(result.contains("bgcolor"))
+        XCTAssertFalse(result.contains("bg.png"))
+        XCTAssertTrue(result.contains("border-color: #ccc"))
+        XCTAssertTrue(result.contains("padding: 4px"))
+        XCTAssertTrue(result.contains("padding:8px"))
+        XCTAssertTrue(result.contains(">Hi</td>"))
+    }
+}
