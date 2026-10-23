@@ -91,6 +91,12 @@ struct APIClient: Sendable {
         return try await send(request, as: ScheduleList.self)
     }
 
+    func timetable(scheduleId: Int) async throws -> Timetable {
+        var request = URLRequest(url: baseURL.appending(path: "v2/timetables/\(scheduleId)"))
+        request.timeoutInterval = 90
+        return try await send(request, as: Timetable.self)
+    }
+
     func download(_ remote: URL, to destination: URL) async throws {
         let result: (URL, URLResponse)
         do {

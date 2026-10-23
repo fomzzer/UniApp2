@@ -23,8 +23,13 @@ struct ScheduleView: View {
                     .pickerStyle(.segmented)
 
                     if let mine = store.myItem(kind, student: session.snapshot?.student) {
-                        myCard(mine)
-                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                        if kind == .lectures, mine.isPdf {
+                            MyTimetableSection(item: mine) { opened = mine }
+                                .transition(.opacity)
+                        } else {
+                            myCard(mine)
+                                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                        }
                     }
 
                     let catalog = self.catalog

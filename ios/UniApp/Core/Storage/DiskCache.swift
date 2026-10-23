@@ -19,6 +19,10 @@ enum DiskCache {
         cachesDirectory.appending(path: "schedules-\(kind.rawValue).json")
     }
 
+    private static func timetableURL(_ scheduleId: Int) -> URL {
+        cachesDirectory.appending(path: "timetables", directoryHint: .isDirectory).appending(path: "\(scheduleId).json")
+    }
+
     static func documentURL(for item: ScheduleItem) -> URL {
         let allowed = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
         let cleaned = String(item.url.lastPathComponent.filter { allowed.contains($0) }.prefix(80))
@@ -55,6 +59,14 @@ enum DiskCache {
 
     static func loadSchedules(_ kind: ScheduleKind) -> ScheduleList? {
         read(ScheduleList.self, from: scheduleURL(kind))
+    }
+
+    static func saveTimetable(_ timetable: Timetable) {
+        write(timetable, to: timetableURL(timetable.scheduleId), protected: false)
+    }
+
+    static func loadTimetable(_ scheduleId: Int) -> Timetable? {
+        read(Timetable.self, from: timetableURL(scheduleId))
     }
 
     static func clearPersonalData() {

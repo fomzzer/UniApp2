@@ -61,6 +61,9 @@ struct HomeView: View {
             }
             .task {
                 await schedules.load(.lectures)
+                if let item = schedules.myItem(.lectures, student: session.snapshot?.student) {
+                    await schedules.loadTimetable(item)
+                }
             }
             .task {
                 await mail.start()
@@ -180,6 +183,7 @@ struct HomeView: View {
                         Text(s.courseStream(year: item.year, stream: item.stream))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Theme.accentSoft)
+                        TimetableGlance(item: item)
                     } else if schedules.isLoading(.lectures) {
                         Text(s.loading)
                             .font(.subheadline)

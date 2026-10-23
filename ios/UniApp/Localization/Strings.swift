@@ -71,6 +71,58 @@ struct Strings: Sendable {
         if let stream { parts.append(t("поток \(stream)", "поток \(stream)")) }
         return parts.joined(separator: " · ")
     }
+    var timetableNow: String { t("Сега", "Сейчас") }
+    var timetableNext: String { t("Следва", "Далее") }
+    var timetableToday: String { t("Днес", "Сегодня") }
+    var timetableTomorrow: String { t("Утре", "Завтра") }
+    var timetableDone: String { t("Днес няма повече занятия", "Сегодня занятий больше нет") }
+    var timetableEmpty: String { t("Няма занятия в програмата", "В расписании нет занятий") }
+    var timetableFreeDay: String { t("Свободен ден", "Свободный день") }
+    var timetablePreparing: String { t("Подготвяме програмата…", "Готовим расписание…") }
+    var timetableUnsupported: String { t("Тази програма не може да се покаже нативно. Отвори PDF файла.", "Это расписание не получилось показать в приложении. Открой PDF.") }
+    var timetableGroup: String { t("Група", "Группа") }
+    var timetableAllGroups: String { t("Всички групи", "Все группы") }
+    var timetableChooseSubgroup: String { t("Избери подгрупа, за да виждаш само своите занятия.", "Выбери подгруппу, чтобы видеть только свои занятия.") }
+    var timetableChooseGroup: String { t("Не открихме групата ти в програмата. Избери я.", "Не нашли твою группу в расписании. Выбери её.") }
+    var timetableFlipWeek: String { t("Смени четна/нечетна седмица", "Поменять чётную и нечётную неделю") }
+    var openPdf: String { t("Отвори PDF", "Открыть PDF") }
+    func minutesLeft(_ minutes: Int) -> String { t("остават \(minutes) мин", "до конца \(minutes) мин") }
+    func startsIn(_ minutes: Int) -> String { t("след \(minutes) мин", "через \(minutes) мин") }
+    func room(_ value: String) -> String { t("зала \(value)", "ауд. \(value)") }
+    func weekParity(_ parity: WeekParity) -> String {
+        switch parity {
+        case .odd: t("Нечетна", "Нечётная")
+        case .even: t("Четна", "Чётная")
+        }
+    }
+    func weekParityShort(_ parity: WeekParity) -> String {
+        switch parity {
+        case .odd: t("нечетна седм.", "нечёт. неделя")
+        case .even: t("четна седм.", "чёт. неделя")
+        }
+    }
+    func currentWeek(_ number: Int?, _ parity: WeekParity) -> String {
+        let name = parity == .odd ? t("нечетна", "нечётная") : t("четна", "чётная")
+        guard let number, number > 0 else { return t("Сега е \(name) седмица", "Сейчас \(name) неделя") }
+        return t("\(number). седмица · \(name)", "\(number)-я неделя · \(name)")
+    }
+    func lessonKind(_ kind: LessonKind) -> String {
+        switch kind {
+        case .lecture: t("Лекция", "Лекция")
+        case .lab: t("Лабораторно", "Лабораторная")
+        case .seminar: t("Семинарно", "Семинар")
+        }
+    }
+    func dayShort(_ day: Int) -> String {
+        let names = language == .bg ? ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"] : ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+        return names[min(max(day, 0), 6)]
+    }
+    func dayName(_ day: Int) -> String {
+        let names = language == .bg
+            ? ["Понеделник", "Вторник", "Сряда", "Четвъртък", "Петък", "Събота", "Неделя"]
+            : ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+        return names[min(max(day, 0), 6)]
+    }
     var dormitory: String { t("Общежитие", "Общежитие") }
     var accommodated: String { t("Настанен", "Заселён") }
     var notAccommodated: String { t("Не е настанен", "Не заселён") }

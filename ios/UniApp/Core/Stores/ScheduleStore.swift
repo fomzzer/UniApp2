@@ -8,6 +8,10 @@ final class ScheduleStore {
     private(set) var loading: Set<ScheduleKind> = []
     private(set) var errors: [ScheduleKind: APIError] = [:]
     private(set) var lastFetch: [ScheduleKind: Date] = [:]
+    private(set) var timetables: [Int: Timetable] = [:]
+    private(set) var timetableLoading: Set<Int> = []
+    private(set) var timetableErrors: [Int: APIError] = [:]
+    private var timetableFetch: [Int: Date] = [:]
     var pinned: ScheduleSelection? = nil {
         didSet { persistPinned() }
     }
@@ -68,6 +72,36 @@ final class ScheduleStore {
         }
         guard let student else { return nil }
         return ScheduleMatcher.bestMatch(for: student, in: available)
+    }
+
+    func timetable(for item: ScheduleItem) -> Timetable? {
+        if let loaded = timetables[item.id], loaded.url == item.url.absoluteString {
+            return loaded
+        }
+        return nil
+    }
+
+    func loadTimetable(_ item: ScheduleItem, force: Bool = false) async {
+        guard item.isPdf, !timetableLoading.contains(item.id) else { return }
+        if timetables[item.id] == nil, let cached = DiskCache.loadTimetable(item.id), cached.url == item.url.absoluteString {
+            timetables[item.id] = cached
+        }
+        if !force, let last = timetableFetch[item.id], Date().timeIntervalSince(last) < Self.freshness, timetables[item.id] != nil {
+            return
+        }
+        timetableLoading.insert(item.id)
+        defer { timetableLoading.remove(item.id) }
+        do {
+            let loaded = try await api.timetable(scheduleId: item.id)
+            timetables[item.id] = loaded
+            timetableErrors[item.id] = nil
+            timetableFetch[item.id] = Date()
+            DiskCache.saveTimetable(loaded)
+        } catch let error as APIError {
+            timetableErrors[item.id] = error
+        } catch {
+            timetableErrors[item.id] = .transport(error.localizedDescription)
+        }
     }
 
     func document(for item: ScheduleItem, forceReload: Bool = false) async throws -> URL {
