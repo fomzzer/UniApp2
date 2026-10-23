@@ -113,8 +113,10 @@ final class InteractionCaptureTests: XCTestCase {
         let row = app.buttons["mail.row"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         sleep(3)
-        app.buttons.matching(identifier: "mail.row").element(boundBy: 1).tap()
-        XCTAssertTrue(app.buttons["mail.attachment"].waitForExistence(timeout: 10))
+        let second = app.buttons.matching(identifier: "mail.row").element(boundBy: 1)
+        XCTAssertTrue(second.isHittable, app.debugDescription)
+        second.tap()
+        XCTAssertTrue(app.buttons["mail.attachment"].waitForExistence(timeout: 10), app.debugDescription)
         sleep(3)
         goBack(app)
         sleep(2)
