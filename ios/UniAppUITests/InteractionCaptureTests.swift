@@ -85,11 +85,10 @@ final class InteractionCaptureTests: XCTestCase {
         let app = launch(signedIn: true)
         let open = app.buttons["home.openSchedule"]
         XCTAssertTrue(open.waitForExistence(timeout: 20))
-        for _ in 0..<4 where !open.isHittable {
-            app.swipeUp()
-        }
-        sleep(4)
-        open.press(forDuration: 0.6)
+        sleep(3)
+        app.swipeUp()
+        sleep(2)
+        open.press(forDuration: 1.2)
         sleep(3)
     }
 }
