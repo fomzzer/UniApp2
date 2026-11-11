@@ -6,6 +6,8 @@
 
 Неофициальный клиент «Е-Студент» для студентов ТУ-София: профиль, оценки, общежитие, расписание занятий и сессии. Полный ремейк версии 1.0 (Qt/C++): нативный iOS-клиент на SwiftUI с Liquid Glass и новый бэкенд.
 
+**Скачать:** готовый `.ipa` для iPhone (iOS 18+) и инструкция по установке — на странице [последнего релиза](https://github.com/fomzzer/UniApp2/releases/latest).
+
 > Independent, non-commercial student project. Not affiliated with, endorsed by or connected to the Technical University of Sofia. The official university portals remain the authoritative source.
 
 ## Структура
@@ -44,12 +46,6 @@ UniApp2/
 Версия берётся из номера запуска workflow: запуск №N даёт артефакт `UniApp-N-unsigned-ipa` с версией `2.0.N` и сборкой `N`. Короткий хэш коммита виден в «О приложении».
 
 Скачай артефакт в Actions → нужный запуск → `UniApp-…-unsigned-ipa`, распакуй и установи `UniApp.ipa` через **Sideloadly** (он подпишет своим Apple ID). Запустить вручную: Actions → iOS → *Run workflow*.
-
-### Релизы
-
-Готовый `.ipa` для всех желающих лежит на странице **[Releases](https://github.com/fomzzer/UniApp2/releases/latest)** вместе с инструкцией по установке (Sideloadly, AltStore / SideStore).
-
-Выпустить новую версию: Actions → **Release** → *Run workflow* → версия, например `2.1.0` (или `git tag v2.1.0 && git push origin v2.1.0`). Workflow соберёт `UniApp-2.1.0.ipa`, создаст тег и релиз. Раздел «Что нового» берётся из `.github/release-notes/v2.1.0.md`, если такой файл есть, иначе — из списка коммитов с прошлого релиза. Общий вид страницы — `.github/release-notes/template.md`.
 
 Ещё два ручных workflow: **iOS capture** записывает видео UI-теста (можно выбрать версию iOS симулятора), **iOS screens** снимает скриншоты всех экранов с тестовыми данными.
 
