@@ -1,5 +1,9 @@
 # UniApp 2.0
 
+[![Скачать IPA](https://img.shields.io/github/v/release/fomzzer/UniApp2?label=%D1%81%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C%20IPA&logo=apple&color=0A84FF)](https://github.com/fomzzer/UniApp2/releases/latest)
+![iOS 18+](https://img.shields.io/badge/iOS-18%2B-black?logo=apple)
+[![iOS](https://github.com/fomzzer/UniApp2/actions/workflows/ios.yml/badge.svg)](https://github.com/fomzzer/UniApp2/actions/workflows/ios.yml)
+
 Неофициальный клиент «Е-Студент» для студентов ТУ-София: профиль, оценки, общежитие, расписание занятий и сессии. Полный ремейк версии 1.0 (Qt/C++): нативный iOS-клиент на SwiftUI с Liquid Glass и новый бэкенд.
 
 > Independent, non-commercial student project. Not affiliated with, endorsed by or connected to the Technical University of Sofia. The official university portals remain the authoritative source.
@@ -40,6 +44,12 @@ UniApp2/
 Версия берётся из номера запуска workflow: запуск №N даёт артефакт `UniApp-N-unsigned-ipa` с версией `2.0.N` и сборкой `N`. Короткий хэш коммита виден в «О приложении».
 
 Скачай артефакт в Actions → нужный запуск → `UniApp-…-unsigned-ipa`, распакуй и установи `UniApp.ipa` через **Sideloadly** (он подпишет своим Apple ID). Запустить вручную: Actions → iOS → *Run workflow*.
+
+### Релизы
+
+Готовый `.ipa` для всех желающих лежит на странице **[Releases](https://github.com/fomzzer/UniApp2/releases/latest)** вместе с инструкцией по установке (Sideloadly, AltStore / SideStore).
+
+Выпустить новую версию: Actions → **Release** → *Run workflow* → версия, например `2.1.0` (или `git tag v2.1.0 && git push origin v2.1.0`). Workflow соберёт `UniApp-2.1.0.ipa`, создаст тег и релиз. Раздел «Что нового» берётся из `.github/release-notes/v2.1.0.md`, если такой файл есть, иначе — из списка коммитов с прошлого релиза. Общий вид страницы — `.github/release-notes/template.md`.
 
 Ещё два ручных workflow: **iOS capture** записывает видео UI-теста (можно выбрать версию iOS симулятора), **iOS screens** снимает скриншоты всех экранов с тестовыми данными.
 

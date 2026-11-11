@@ -1,0 +1,144 @@
+name: Release
+
+# Публикует релиз на странице Releases с готовым UniApp-X.Y.Z.ipa.
+# Запуск: Actions → Release → Run workflow (версия, например 2.1.0)
+# или пуш тега: git tag v2.1.0 && git push origin v2.1.0
+# Текст «Что нового» берётся из .github/release-notes/vX.Y.Z.md,
+# а если такого файла нет — из списка коммитов с прошлого релиза.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Версия без «v», например 2.1.0"
+        required: true
+      prerelease:
+        description: "Пометить как пре-релиз"
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Version
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${{ inputs.version }}"
+            VERSION="${VERSION#v}"
+          fi
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Версия должна быть вида 2.1.0, получено «$VERSION»"; exit 1
+          fi
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Релиз $TAG уже существует"; exit 1
+          fi
+          {
+            echo "VERSION=$VERSION"
+            echo "TAG=$TAG"
+            echo "BUILD_NUMBER=$(git rev-list --count HEAD)"
+            echo "UNIAPP_COMMIT=$(git rev-parse --short=7 HEAD)"
+            echo "PREV_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | grep -vx "$TAG" | head -n 1)"
+          } >> "$GITHUB_ENV"
+
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Build unsigned IPA
+        working-directory: ios
+        run: |
+          set -o pipefail
+          brew install xcodegen xcbeautify
+          xcodegen generate
+          xcodebuild build \
+            -project UniApp.xcodeproj \
+            -scheme UniApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build/release \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            UNIAPP_COMMIT="$UNIAPP_COMMIT" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" | xcbeautify --renderer github-actions
+          mkdir -p Payload
+          cp -R build/release/Build/Products/Release-iphoneos/UniApp.app Payload/
+          zip -qry "UniApp-$VERSION.ipa" Payload
+          shasum -a 256 "UniApp-$VERSION.ipa" | tee "UniApp-$VERSION.ipa.sha256"
+
+      - name: Release notes
+        run: |
+          python3 - <<'PY'
+          import os, subprocess, pathlib
+
+          env = os.environ
+          version, tag, prev = env["VERSION"], env["TAG"], env.get("PREV_TAG", "")
+          repo = f"{env['GITHUB_SERVER_URL']}/{env['GITHUB_REPOSITORY']}"
+          ipa = pathlib.Path(f"ios/UniApp-{version}.ipa")
+          sha = pathlib.Path(f"{ipa}.sha256").read_text().split()[0]
+
+          custom = pathlib.Path(f".github/release-notes/{tag}.md")
+          if custom.exists():
+              changes = custom.read_text(encoding="utf-8").strip()
+          else:
+              rng = f"{prev}..HEAD" if prev else "HEAD"
+              changes = subprocess.run(
+                  ["git", "log", "--no-merges", "--pretty=format:- %s (%h)", rng],
+                  capture_output=True, text=True, check=True,
+              ).stdout.strip() or "- Небольшие исправления и улучшения."
+          if prev:
+              changes += f"\n\n**Все изменения:** [{prev}...{tag}]({repo}/compare/{prev}...{tag})"
+
+          values = {
+              "VERSION": version,
+              "DOWNLOAD_URL": f"{repo}/releases/download/{tag}/{ipa.name}",
+              "SIZE_MB": f"{ipa.stat().st_size / 1024 / 1024:.1f}",
+              "BUILD": env["BUILD_NUMBER"],
+              "COMMIT": env["UNIAPP_COMMIT"],
+              "COMMIT_URL": f"{repo}/commit/{env['GITHUB_SHA']}",
+              "RUN_URL": f"{repo}/actions/runs/{env['GITHUB_RUN_ID']}",
+              "SHA256": sha,
+              "CHANGES": changes,
+          }
+          text = pathlib.Path(".github/release-notes/template.md").read_text(encoding="utf-8")
+          for key, value in values.items():
+              text = text.replace("{{" + key + "}}", value)
+          pathlib.Path("release-notes.md").write_text(text, encoding="utf-8")
+          PY
+          cat release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then FLAGS="--prerelease"; else FLAGS="--latest"; fi
+          gh release create "$TAG" \
+            "ios/UniApp-$VERSION.ipa" \
+            "ios/UniApp-$VERSION.ipa.sha256" \
+            --target "$GITHUB_SHA" \
+            --title "UniApp $VERSION" \
+            --notes-file release-notes.md \
+            $FLAGS
