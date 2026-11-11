@@ -21,7 +21,7 @@ UniApp2/
 │   └── MailIntegration/ проверка отправки почты против настоящего Roundcube
 ├── backend/             FastAPI + Docker Compose + Caddy (HTTPS)
 ├── docs/API.md          контракт API v2 (общий для iOS и будущего Android)
-└── .github/workflows/   CI: сборка .ipa, тесты бэкенда, записи и скриншоты с симулятора
+└── .github/workflows/   CI: сборка .ipa, релизы, тесты бэкенда, записи и скриншоты с симулятора
 ```
 
 ## iOS
@@ -35,21 +35,9 @@ UniApp2/
 - **Почта**: TUSmail внутри приложения — папки, непрочитанные, вложения, HTML-письма в тёмной гамме; новое письмо, ответ, ответ всем, пересылка, флажок, перемещение, удаление в «Корзину». Чтение идёт по IMAP, отправка — через веб-почту Roundcube того же сервера (SMTP снаружи закрыт).
 - **Безопасность**: данные для входа — только в Keychain (`WhenUnlockedThisDeviceOnly`), снапшот на диске с `completeFileProtection`, блокировка Face ID, шторка в переключателе приложений.
 
-### Сборка без Mac
+### Сборка и CI
 
-Каждый пуш в `main`, который меняет `ios/`, запускает workflow **iOS** на macOS-раннере GitHub:
-
-1. `xcodegen generate` создаёт проект,
-2. прогоняются юнит-тесты на симуляторе,
-3. собирается **неподписанный** `UniApp.ipa` и прикладывается к запуску как артефакт.
-
-Версия берётся из номера запуска workflow: запуск №N даёт артефакт `UniApp-N-unsigned-ipa` с версией `2.0.N` и сборкой `N`. Короткий хэш коммита виден в «О приложении».
-
-Скачай артефакт в Actions → нужный запуск → `UniApp-…-unsigned-ipa`, распакуй и установи `UniApp.ipa` через **Sideloadly** (он подпишет своим Apple ID). Запустить вручную: Actions → iOS → *Run workflow*.
-
-Ещё два ручных workflow: **iOS capture** записывает видео UI-теста (можно выбрать версию iOS симулятора), **iOS screens** снимает скриншоты всех экранов с тестовыми данными.
-
-### Сборка на Mac
+Xcode-проект не хранится в репозитории: он генерируется из `ios/project.yml` с помощью [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ```bash
 brew install xcodegen
@@ -57,6 +45,14 @@ cd ios && xcodegen generate && open UniApp.xcodeproj
 ```
 
 Адрес сервера задаётся build-настройкой `UNIAPP_API_HOST` в `ios/project.yml` (только хост, схема всегда `https`).
+
+Сборка не требует Mac: всё выполняется в GitHub Actions на macOS-раннерах.
+
+- **iOS** — на каждое изменение в `ios/` генерирует проект, прогоняет юнит-тесты на симуляторе и собирает неподписанный `.ipa`.
+- **Release** — собирает версию и публикует её на странице [Releases](https://github.com/fomzzer/UniApp2/releases) вместе с инструкцией по установке.
+- **iOS capture** и **iOS screens** — запись видео UI-тестов и скриншоты всех экранов на тестовых данных, с выбором версии iOS симулятора.
+
+Версия, номер сборки и короткий хэш коммита попадают в `Info.plist` и видны в приложении в разделе «О приложении».
 
 ## Backend
 
@@ -69,7 +65,7 @@ FastAPI-сервис без хранения персональных данны
 
 Подробно: [docs/API.md](docs/API.md).
 
-### Локально
+### Запуск и тесты
 
 ```bash
 cd backend
@@ -79,17 +75,9 @@ UNIAPP_DATA_DIR=./data python -m pytest -q
 UNIAPP_DATA_DIR=./data uvicorn app.main:app --reload
 ```
 
-### Деплой на Azure VM
+### Развёртывание
 
-Нужно: Docker с compose-плагином, открытые входящие порты **80** и **443** в Network Security Group виртуалки (для выпуска сертификата Let's Encrypt), и домен, указывающий на IP. Если своего домена нет, подойдёт `20-215-255-122.sslip.io` — он автоматически резолвится в этот IP.
-
-```bash
-cd backend
-cp .env.example .env
-./deploy.sh
-```
-
-`deploy.sh` поднимает `api` + `caddy`. Caddy сам получает и продлевает HTTPS-сертификат.
+Сервер работает на виртуальной машине Azure в Docker Compose: контейнер `api` с FastAPI и [Caddy](https://caddyserver.com) перед ним, который сам получает и продлевает сертификат Let's Encrypt. Для этого нужны открытые порты 80 и 443 и домен, указывающий на IP машины. Настройки берутся из `backend/.env` (шаблон — `.env.example`), запуск — `backend/deploy.sh`.
 
 ## Android
 
