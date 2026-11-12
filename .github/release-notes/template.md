@@ -39,8 +39,7 @@ Unofficial E-Student client for Technical University of Sofia students<br>
 2. Скачайте `UniApp-{{VERSION}}.ipa` на iPhone через Safari.
 3. В AltStore / SideStore откройте **My Apps → +** и выберите скачанный файл.
 
-> [!NOTE]
-> При бесплатном Apple ID подпись действует 7 дней, после чего приложение нужно переподписать (AltStore и SideStore делают это автоматически). При установке новой версии поверх старой данные сохраняются.
+> **Важно.** При бесплатном Apple ID подпись действует 7 дней, после чего приложение нужно переподписать (AltStore и SideStore делают это автоматически). При установке новой версии поверх старой данные сохраняются.
 
 </details>
 
@@ -69,8 +68,7 @@ The file is unsigned: it gets signed with your Apple ID during installation. Thi
 2. Download `UniApp-{{VERSION}}.ipa` on the iPhone with Safari.
 3. In AltStore / SideStore, open **My Apps → +** and select the downloaded file.
 
-> [!NOTE]
-> With a free Apple ID the signature is valid for 7 days, after which the app has to be re-signed (AltStore and SideStore do this automatically). Installing a new version over the old one keeps your data.
+> **Note.** With a free Apple ID the signature is valid for 7 days, after which the app has to be re-signed (AltStore and SideStore do this automatically). Installing a new version over the old one keeps your data.
 
 </details>
 
@@ -99,8 +97,7 @@ The file is unsigned: it gets signed with your Apple ID during installation. Thi
 2. Изтеглете `UniApp-{{VERSION}}.ipa` на iPhone чрез Safari.
 3. В AltStore / SideStore отворете **My Apps → +** и изберете изтегления файл.
 
-> [!NOTE]
-> С безплатен Apple ID подписът е валиден 7 дни, след което приложението трябва да се подпише отново (AltStore и SideStore правят това автоматично). При инсталиране на нова версия върху старата данните се запазват.
+> **Важно.** С безплатен Apple ID подписът е валиден 7 дни, след което приложението трябва да се подпише отново (AltStore и SideStore правят това автоматично). При инсталиране на нова версия върху старата данните се запазват.
 
 </details>
 
