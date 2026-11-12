@@ -9,6 +9,11 @@ on:
       ios:
         description: Simulator iOS version, like 26 or 18.6
         default: "18.6"
+      lang:
+        description: App language
+        type: choice
+        options: [ru, bg]
+        default: ru
 
 permissions:
   contents: read
@@ -63,7 +68,10 @@ jobs:
           xcrun simctl install "$DEVICE_ID" build/screens/Build/Products/Debug-iphonesimulator/UniApp.app
 
       - name: Capture screens
+        env:
+          APP_LANG: ${{ inputs.lang || 'ru' }}
         run: |
+          if [ "$APP_LANG" = bg ]; then APP_LOCALE=bg_BG; else APP_LOCALE=ru_RU; fi
           mkdir -p screens
           python3 - <<'PY'
           import re
@@ -79,9 +87,9 @@ jobs:
           for screen in home grades schedule profile mail; do
             xcrun simctl terminate "$DEVICE_ID" com.fomzzer.uniapp 2>/dev/null || true
             if [ "$screen" = mail ]; then
-              SIMCTL_CHILD_UNIAPP_UITEST_TAB=home SIMCTL_CHILD_UNIAPP_UITEST_OPEN_MAIL=1 xcrun simctl launch "$DEVICE_ID" com.fomzzer.uniapp -AppleLanguages "(ru)" -AppleLocale ru_RU -settings.language ru -timetable.group 37б
+              SIMCTL_CHILD_UNIAPP_UITEST_TAB=home SIMCTL_CHILD_UNIAPP_UITEST_OPEN_MAIL=1 xcrun simctl launch "$DEVICE_ID" com.fomzzer.uniapp -AppleLanguages "($APP_LANG)" -AppleLocale "$APP_LOCALE" -settings.language "$APP_LANG" -timetable.group 37б
             else
-              SIMCTL_CHILD_UNIAPP_UITEST_TAB=$screen xcrun simctl launch "$DEVICE_ID" com.fomzzer.uniapp -AppleLanguages "(ru)" -AppleLocale ru_RU -settings.language ru -timetable.group 37б
+              SIMCTL_CHILD_UNIAPP_UITEST_TAB=$screen xcrun simctl launch "$DEVICE_ID" com.fomzzer.uniapp -AppleLanguages "($APP_LANG)" -AppleLocale "$APP_LOCALE" -settings.language "$APP_LANG" -timetable.group 37б
             fi
             sleep 15
             xcrun simctl io "$DEVICE_ID" screenshot "screens/$screen-early.png"
@@ -96,6 +104,6 @@ jobs:
       - uses: actions/upload-artifact@v5
         if: always()
         with:
-          name: screens-${{ inputs.ios }}-${{ github.run_number }}
+          name: screens-${{ inputs.ios }}-${{ inputs.lang || 'ru' }}-${{ github.run_number }}
           path: ios/screens
           retention-days: 7
