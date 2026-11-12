@@ -3,8 +3,9 @@ name: Release
 # Публикует релиз на странице Releases с готовым UniApp-X.Y.Z.ipa.
 # Запуск: Actions → Release → Run workflow (версия, например 2.1.0)
 # или пуш тега: git tag v2.1.0 && git push origin v2.1.0
-# Текст «Что нового» берётся из .github/release-notes/vX.Y.Z.md,
-# а если такого файла нет — из списка коммитов с прошлого релиза.
+# Страница на трёх языках. Текст «Что нового» берётся из
+# .github/release-notes/vX.Y.Z.ru.md, .en.md и .bg.md, а если файла
+# для языка нет — из списка коммитов с прошлого релиза.
 
 on:
   push:
@@ -101,17 +102,26 @@ jobs:
           ipa = pathlib.Path(f"ios/UniApp-{version}.ipa")
           sha = pathlib.Path(f"{ipa}.sha256").read_text().split()[0]
 
-          custom = pathlib.Path(f".github/release-notes/{tag}.md")
-          if custom.exists():
-              changes = custom.read_text(encoding="utf-8").strip()
-          else:
-              rng = f"{prev}..HEAD" if prev else "HEAD"
-              changes = subprocess.run(
-                  ["git", "log", "--no-merges", "--pretty=format:- %s (%h)", rng],
-                  capture_output=True, text=True, check=True,
-              ).stdout.strip() or "- Небольшие исправления и улучшения."
-          if prev:
-              changes += f"\n\n**Все изменения:** [{prev}...{tag}]({repo}/compare/{prev}...{tag})"
+          rng = f"{prev}..HEAD" if prev else "HEAD"
+          commits = subprocess.run(
+              ["git", "log", "--no-merges", "--pretty=format:- %s (%h)", rng],
+              capture_output=True, text=True, check=True,
+          ).stdout.strip()
+          langs = {
+              "RU": ("Небольшие исправления и улучшения.", "Все изменения"),
+              "EN": ("Minor fixes and improvements.", "Full changelog"),
+              "BG": ("Дребни поправки и подобрения.", "Всички промени"),
+          }
+          changes = {}
+          for lang, (fallback, full) in langs.items():
+              custom = pathlib.Path(f".github/release-notes/{tag}.{lang.lower()}.md")
+              if custom.exists():
+                  text = custom.read_text(encoding="utf-8").strip()
+              else:
+                  text = commits or f"- {fallback}"
+              if prev:
+                  text += f"\n\n**{full}:** [{prev}...{tag}]({repo}/compare/{prev}...{tag})"
+              changes[f"CHANGES_{lang}"] = text
 
           values = {
               "VERSION": version,
@@ -122,7 +132,7 @@ jobs:
               "COMMIT_URL": f"{repo}/commit/{env['GITHUB_SHA']}",
               "RUN_URL": f"{repo}/actions/runs/{env['GITHUB_RUN_ID']}",
               "SHA256": sha,
-              "CHANGES": changes,
+              **changes,
           }
           text = pathlib.Path(".github/release-notes/template.md").read_text(encoding="utf-8")
           for key, value in values.items():
