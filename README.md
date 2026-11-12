@@ -12,6 +12,13 @@
 
 **Скачать:** готовый `.ipa` для iPhone (iOS 18+) и инструкция по установке — на странице [последнего релиза](https://github.com/fomzzer/UniApp2/releases/latest).
 
+<p align="center">
+  <img src="docs/screenshots/ru/home.jpg" alt="Главная" width="200">
+  <img src="docs/screenshots/ru/grades.jpg" alt="Оценки" width="200">
+  <img src="docs/screenshots/ru/schedule.jpg" alt="Расписание" width="200">
+  <img src="docs/screenshots/ru/profile.jpg" alt="Профиль" width="200">
+</p>
+
 > Independent, non-commercial student project. Not affiliated with, endorsed by or connected to the Technical University of Sofia. The official university portals remain the authoritative source.
 
 ## Структура

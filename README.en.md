@@ -12,6 +12,13 @@ An unofficial "E-Student" client for students of the Technical University of Sof
 
 **Download:** a ready-made `.ipa` for iPhone (iOS 18+) and installation instructions are on the [latest release](https://github.com/fomzzer/UniApp2/releases/latest) page.
 
+<p align="center">
+  <img src="docs/screenshots/bg/home.jpg" alt="Home" width="200">
+  <img src="docs/screenshots/bg/grades.jpg" alt="Grades" width="200">
+  <img src="docs/screenshots/bg/schedule.jpg" alt="Schedule" width="200">
+  <img src="docs/screenshots/bg/profile.jpg" alt="Profile" width="200">
+</p>
+
 > Independent, non-commercial student project. Not affiliated with, endorsed by or connected to the Technical University of Sofia. The official university portals remain the authoritative source.
 
 ## Structure
